@@ -1,0 +1,34 @@
+{
+  "schema_id": "linker-g20-left-semantic-16-v1",
+  "schema_version": 1,
+  "hand_model": "LinkerHand G20",
+  "hand_side": "left",
+  "units": "radian",
+  "ordered_joints": [
+    {"name": "index_mcp_roll", "position_limit": [-0.17, 0.17], "continuous": false},
+    {"name": "index_mcp_pitch", "position_limit": [0.0, 1.4], "continuous": false},
+    {"name": "index_pip", "position_limit": [0.0, 1.57], "continuous": false},
+    {"name": "middle_mcp_roll", "position_limit": [-0.17, 0.17], "continuous": false},
+    {"name": "middle_mcp_pitch", "position_limit": [0.0, 1.4], "continuous": false},
+    {"name": "middle_pip", "position_limit": [0.0, 1.57], "continuous": false},
+    {"name": "ring_mcp_roll", "position_limit": [-0.17, 0.17], "continuous": false},
+    {"name": "ring_mcp_pitch", "position_limit": [0.0, 1.4], "continuous": false},
+    {"name": "ring_pip", "position_limit": [0.0, 1.57], "continuous": false},
+    {"name": "pinky_mcp_roll", "position_limit": [-0.17, 0.17], "continuous": false},
+    {"name": "pinky_mcp_pitch", "position_limit": [0.0, 1.4], "continuous": false},
+    {"name": "pinky_pip", "position_limit": [0.0, 1.57], "continuous": false},
+    {"name": "thumb_cmc_yaw", "position_limit": [0.0, 1.4], "continuous": false},
+    {"name": "thumb_cmc_roll", "position_limit": [0.0, 1.22], "continuous": false},
+    {"name": "thumb_cmc_pitch", "position_limit": [0.0, 0.79], "continuous": false},
+    {"name": "thumb_mcp", "position_limit": [0.0, 1.05], "continuous": false}
+  ],
+  "mimic_relationships": [
+    {"joint": "index_dip", "source": "index_pip", "multiplier": 0.8917, "offset": 0.0},
+    {"joint": "middle_dip", "source": "middle_pip", "multiplier": 0.8917, "offset": 0.0},
+    {"joint": "ring_dip", "source": "ring_pip", "multiplier": 0.8917, "offset": 0.0},
+    {"joint": "pinky_dip", "source": "pinky_pip", "multiplier": 0.8917, "offset": 0.0},
+    {"joint": "thumb_ip", "source": "thumb_mcp", "multiplier": 1.1619, "offset": 0.0}
+  ],
+  "digest_algorithm": "sha256-canonical-json-excluding-digest",
+  "digest": "ce53ccafeb70a7bd9ba203576f7e54f330e106c0676ef90f8262d2a9ffa34ba7"
+}

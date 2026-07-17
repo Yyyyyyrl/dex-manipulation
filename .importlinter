@@ -1,0 +1,33 @@
+[importlinter]
+root_packages =
+    dex_contracts
+    dex_runtime
+    dex_teleop_adapters
+    dex_hardware_linker
+
+[importlinter:contract:contracts-are-leaf]
+name = dex_contracts cannot depend on runtime adapters
+type = forbidden
+source_modules =
+    dex_contracts
+forbidden_modules =
+    dex_runtime
+    dex_teleop_adapters
+    dex_hardware_linker
+
+[importlinter:contract:teleop-no-hardware]
+name = teleop adapters cannot depend on hardware or runtime
+type = forbidden
+source_modules =
+    dex_teleop_adapters
+forbidden_modules =
+    dex_hardware_linker
+    dex_runtime
+
+[importlinter:contract:hardware-no-runtime]
+name = hardware adapter cannot depend on supervisor
+type = forbidden
+source_modules =
+    dex_hardware_linker
+forbidden_modules =
+    dex_runtime

@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools==81.0.0", "wheel==0.46.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dex-manipulation"
+version = "0.1.0"
+description = "Mixed-control dexterous manipulation runtime"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy==1.26.0",
+  "PyYAML==6.0.2",
+  "safetensors==0.7.0",
+  "torch==2.7.0",
+]
+
+[project.optional-dependencies]
+manus = [
+  "dex-retargeting @ git+https://github.com/dexsuite/dex-retargeting.git@3f56141bc8bd2760d5e452e382937269554ebb21",
+]
+linker = [
+  "python-can==4.6.1",
+]
+pedal = [
+  "evdev==1.7.1",
+]
+dev = [
+  "pytest==9.0.3",
+  "import-linter==2.3",
+]
+
+[project.scripts]
+dex-runtime = "dex_runtime.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+dex_hardware_linker = [
+  "assets/calibrations/*.json",
+  "assets/model/*.json",
+  "assets/model/*.urdf",
+  "assets/model/meshes/*.STL",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

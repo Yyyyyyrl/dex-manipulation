@@ -1,0 +1,61 @@
+{
+  "artifact_type": "linker-hand-calibration",
+  "artifact_version": 1,
+  "calibration_id": "linker-g20-left-lht20-010-415-v1",
+  "hand_model": "LinkerHand G20",
+  "hand_joint": "G20",
+  "hand_side": "left",
+  "serial_number": "LHT20-010-415-L-B-1-D",
+  "fleet_applicability": {
+    "mode": "serial-only",
+    "serial_numbers": ["LHT20-010-415-L-B-1-D"]
+  },
+  "semantic_schema_id": "linker-g20-left-semantic-16-v1",
+  "semantic_schema_digest": "ce53ccafeb70a7bd9ba203576f7e54f330e106c0676ef90f8262d2a9ffa34ba7",
+  "semantic_units": "radian",
+  "semantic_to_native": [
+    {"name": "index_mcp_roll", "slot": 6, "soft_limit": [-0.17, 0.17], "flip": false, "offset": 0.0},
+    {"name": "index_mcp_pitch", "slot": 1, "soft_limit": [0.0, 1.4], "flip": false, "offset": 0.0},
+    {"name": "index_pip", "slot": 16, "soft_limit": [0.0, 1.57], "flip": false, "offset": 0.0},
+    {"name": "middle_mcp_roll", "slot": 7, "soft_limit": [-0.17, 0.17], "flip": false, "offset": 0.0},
+    {"name": "middle_mcp_pitch", "slot": 2, "soft_limit": [0.0, 1.4], "flip": false, "offset": 0.0},
+    {"name": "middle_pip", "slot": 17, "soft_limit": [0.0, 1.57], "flip": false, "offset": 0.0},
+    {"name": "ring_mcp_roll", "slot": 8, "soft_limit": [-0.17, 0.17], "flip": false, "offset": 0.0},
+    {"name": "ring_mcp_pitch", "slot": 3, "soft_limit": [0.0, 1.4], "flip": false, "offset": 0.0},
+    {"name": "ring_pip", "slot": 18, "soft_limit": [0.0, 1.57], "flip": false, "offset": 0.0},
+    {"name": "pinky_mcp_roll", "slot": 9, "soft_limit": [-0.17, 0.17], "flip": false, "offset": 0.0},
+    {"name": "pinky_mcp_pitch", "slot": 4, "soft_limit": [0.0, 1.4], "flip": false, "offset": 0.0},
+    {"name": "pinky_pip", "slot": 19, "soft_limit": [0.0, 1.57], "flip": false, "offset": 0.0},
+    {"name": "thumb_cmc_yaw", "slot": 10, "soft_limit": [0.0, 1.4], "flip": false, "offset": 0.0},
+    {"name": "thumb_cmc_roll", "slot": 5, "soft_limit": [0.0, 1.22], "flip": false, "offset": 0.0},
+    {"name": "thumb_cmc_pitch", "slot": 0, "soft_limit": [0.0, 0.79], "flip": false, "offset": 0.0},
+    {"name": "thumb_mcp", "slot": 15, "soft_limit": [0.0, 1.05], "flip": false, "offset": 0.0}
+  ],
+  "mapping_mode": "normalized-semantic-fraction-to-native-arc",
+  "native": {
+    "slot_count": 20,
+    "command_units": "range-0-255",
+    "arc_units": "radian",
+    "arc_min": [0.0, 0.0, 0.0, 0.0, 0.0, -0.297, -0.26, -0.26, -0.26, -0.26, 0.122, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "arc_max": [0.87, 1.4, 1.4, 1.4, 1.4, 0.683, 0.26, 0.26, 0.26, 0.26, 1.78, 0.0, 0.0, 0.0, 0.0, 1.29, 1.08, 1.08, 1.08, 1.08],
+    "direction": [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, -1, -1, -1, -1, -1],
+    "inactive_slots": [11, 12, 13, 14],
+    "inactive_fill": 0,
+    "quantization": "round-nearest-integer"
+  },
+  "calibration_procedure_version": "hand-check-v1",
+  "calibration_author": "unrecorded",
+  "calibration_date": "2026-07-06",
+  "physical_verification_evidence": [
+    "docs/DEPLOY.md#6-bring-up-findings-2026-07-06-hand-lht20-010-415-l-b-1-d",
+    "tests/test_linker_sdk_map.py",
+    "linker_calib.json"
+  ],
+  "experimental_calibrations_excluded": [
+    "linker_calib_absolute.json"
+  ],
+  "source_repository": "dex-forge",
+  "source_commit": "ff3261d91b78b47110c0513244b602f40dffa9ef",
+  "digest_algorithm": "sha256-canonical-json-excluding-artifact-digest",
+  "artifact_digest": "1e20d989a14aa9fe127e78680decb9bb29679858e223c41ad28ae67a598d51df"
+}

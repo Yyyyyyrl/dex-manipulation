@@ -1,0 +1,62 @@
+diff --git a/linker_hand_sdk_ros/scripts/LinkerHand/core/can/linker_hand_g20_can.py b/linker_hand_sdk_ros/scripts/LinkerHand/core/can/linker_hand_g20_can.py
+index cfd5519..c70ee79 100644
+--- a/linker_hand_sdk_ros/scripts/LinkerHand/core/can/linker_hand_g20_can.py
++++ b/linker_hand_sdk_ros/scripts/LinkerHand/core/can/linker_hand_g20_can.py
+@@ -942,7 +942,10 @@ class LinkerHandG20Can:
+         """根据手指映射关系，将手指控制命令列表转换为手指分组数据形式"""
+         # 定义手指映射规则
+         finger_mapping = {
+-            '拇指': [10, 5, 0, 11, 12, 15],
++            # 拇指第0/1位与状态回读一致：fd[0]=侧摆(slot5)、fd[1]=横摆(slot10)。
++            # 原表为 [10, 5, ...]，与 joint_state_to_cmd_state 的映射相反，
++            # 导致命令的 slot5/slot10 在硬件上互换。
++            '拇指': [5, 10, 0, 11, 12, 15],
+             '食指': [6, 11, 1, 13, 14, 16],
+             '中指': [7, 12, 2, 13, 14, 17],
+             '无名指': [8, 13, 3, 14, 15, 18],
+@@ -962,27 +965,30 @@ class LinkerHandG20Can:
+         将手指序列状态列表转换为控制命令序列状态列表
+         """
+         original = [""] * 20
+-        try:        
++        try:
+             for i, finger_data in enumerate(list):
+                 # 基本位置映射
+                 original[i] = finger_data[2]        # 根部
+                 original[i + 5] = finger_data[0]    # 侧摆
+-                original[i + 15] = finger_data[5]   # 末端
+-                
+-                # 特殊位置处理
++
++                # 特殊位置处理（预留数据只允许写入 11-14，
++                # 否则无名指/小指的预留值会覆盖 15/16 的拇指/食指末端状态）
+                 if i == 0:  # 拇指
+                     original[10] = finger_data[1]   # 横摆
+-                    original[11] = finger_data[3]   # 预留
+-                    original[12] = finger_data[4]   # 预留
+-                else:  # 其他手指
+-                    original[10 + i] = finger_data[1]  # 预留位置
+-                    if i <= 2:  # 食指、中指
+-                        original[12 + i] = finger_data[3]  # 预留
+-                        original[13 + i] = finger_data[4]  # 预留
+-                    else:  # 无名指、小指
+-                        original[11 + i] = finger_data[3]  # 预留
+-                        original[12 + i] = finger_data[4]  # 预留
+-            
++                    reserved = ((11, finger_data[3]), (12, finger_data[4]))
++                elif i <= 2:  # 食指、中指
++                    reserved = ((10 + i, finger_data[1]),
++                                (12 + i, finger_data[3]), (13 + i, finger_data[4]))
++                else:  # 无名指、小指
++                    reserved = ((10 + i, finger_data[1]),
++                                (11 + i, finger_data[3]), (12 + i, finger_data[4]))
++                for slot, value in reserved:
++                    if 11 <= slot <= 14:  # 预留区域
++                        original[slot] = value
++
++            for i, finger_data in enumerate(list):
++                original[i + 15] = finger_data[5]   # 末端（最后写入，避免被预留数据覆盖）
++
+             return original
+         except:
+             return [-1] * 20

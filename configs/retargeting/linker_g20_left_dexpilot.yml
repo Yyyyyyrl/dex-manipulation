@@ -1,0 +1,23 @@
+retargeting:
+  type: DexPilot
+  # urdf_path 相对 RetargetingConfig.set_default_urdf_dir() 设定的根目录。
+  urdf_path: linkerhand_l20_left.urdf
+
+  # 只优化 16 个主动关节；被动 mimic 关节(*_dip 跟随 *_pip、thumb_ip 跟随 thumb_mcp)
+  # 不能列进来，否则 dex_retargeting 构建会报 "Mimic joint should not be one of the target joints"。
+  target_joint_names: [ "pinky_mcp_roll", "pinky_mcp_pitch", "pinky_pip",
+                        "ring_mcp_roll", "ring_mcp_pitch", "ring_pip",
+                        "middle_mcp_roll", "middle_mcp_pitch", "middle_pip",
+                        "index_mcp_roll", "index_mcp_pitch", "index_pip",
+                        "thumb_cmc_yaw", "thumb_cmc_roll", "thumb_cmc_pitch", "thumb_mcp" ]
+
+  # DexPilot 只需手腕 link 和指尖 link，human indices 由算法内部默认生成。
+  wrist_link_name: "hand_base_link"
+  # 顺序须为 [thumb, index, middle, ring, pinky]，DexPilot 据此投影拇指与各指距离。
+  finger_tip_link_names: [ "thumb_tip", "index_tip", "middle_tip", "ring_tip", "pinky_tip" ]
+  scaling_factor: 1.6    #1.6
+
+  # alpha 越小滤波越强：更平滑但延迟更大。
+  low_pass_alpha: 0.5
+  ignore_mimic_joint: False
+  has_joint_limits: true

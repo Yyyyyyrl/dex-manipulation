@@ -1,0 +1,78 @@
+{
+  "model_id": "linkerhand-left-superset-v1",
+  "model_version": 1,
+  "urdf": {
+    "path": "linkerhand_l20_left.urdf",
+    "sha256": "27a1aa31f98c18d7ace0017d4a43904599cad3c10eed5d60af88ca27c723eaec"
+  },
+  "semantic_schema_id": "linker-g20-left-semantic-16-v1",
+  "semantic_schema_digest": "ce53ccafeb70a7bd9ba203576f7e54f330e106c0676ef90f8262d2a9ffa34ba7",
+  "coordinate_conventions": {
+    "length_units": "meter",
+    "angle_units": "radian",
+    "base_frame": "hand_base_link",
+    "base_frame_axes": {
+      "finger_longitudinal": "+Z",
+      "palm_normal": "+X",
+      "thumb_edge": "-Y"
+    }
+  },
+  "actuated_joints": [
+    "index_mcp_roll",
+    "index_mcp_pitch",
+    "index_pip",
+    "middle_mcp_roll",
+    "middle_mcp_pitch",
+    "middle_pip",
+    "ring_mcp_roll",
+    "ring_mcp_pitch",
+    "ring_pip",
+    "pinky_mcp_roll",
+    "pinky_mcp_pitch",
+    "pinky_pip",
+    "thumb_cmc_yaw",
+    "thumb_cmc_roll",
+    "thumb_cmc_pitch",
+    "thumb_mcp"
+  ],
+  "mimic_joints": [
+    {"joint": "index_dip", "source": "index_pip", "multiplier": 0.8917, "offset": 0.0},
+    {"joint": "middle_dip", "source": "middle_pip", "multiplier": 0.8917, "offset": 0.0},
+    {"joint": "ring_dip", "source": "ring_pip", "multiplier": 0.8917, "offset": 0.0},
+    {"joint": "pinky_dip", "source": "pinky_pip", "multiplier": 0.8917, "offset": 0.0},
+    {"joint": "thumb_ip", "source": "thumb_mcp", "multiplier": 1.1619, "offset": 0.0}
+  ],
+  "fingertip_links": [
+    "thumb_tip",
+    "index_tip",
+    "middle_tip",
+    "ring_tip",
+    "pinky_tip"
+  ],
+  "meshes": {
+    "hand_base_link.STL": "5731b19b50b4b527114adb8de55bba15ba421756c2f9bcea60d68be94dbdd90b",
+    "index_distal.STL": "27ced01bbbc33d59f20957eb7c54bc0f23f6ba3a86832c641f3d2cb6c10c5009",
+    "index_metacarpals.STL": "e31345027027f50543192446327eb52fda373ee371378ac56d59b6e3a8183100",
+    "index_middle.STL": "03d39565b6736c1dbd74d4fb78fc6df6a029e8830749a5c743b27434e8544a79",
+    "index_proximal.STL": "a009a4af6d042762c3c8ded32bd7151efc477e6839714112e61f20fa418b4e4c",
+    "middle_distal.STL": "0d1f05f0ca13b635e062c2264e4420d55281442578033734f759539312c33610",
+    "middle_metacarpals.STL": "e31345027027f50543192446327eb52fda373ee371378ac56d59b6e3a8183100",
+    "middle_middle.STL": "350d63a1bcc57f7ee4985a52b86c06d5fc432dce7a3cb6fbac310567a3c78cb4",
+    "middle_proximal.STL": "1ff4af7a882a922f05e36916992b87ebaf7cc4081dbd9da813831276412a6a78",
+    "pinky_distal.STL": "04180872f8a06de0c44ef7dcfb3423d40d554cfba2f9bb4056f5b7293b09024e",
+    "pinky_metacarpals.STL": "e31345027027f50543192446327eb52fda373ee371378ac56d59b6e3a8183100",
+    "pinky_middle.STL": "96bf50fc3dcaf709d06361eb15e30510a89399b07265bf2a6bee5532e40d0012",
+    "pinky_proximal.STL": "529e677e75e0d69a4bf1de14e0d5d7ab6aa96dd8a5d7573f2c7c3a47157d083f",
+    "ring_distal.STL": "cba65d8dfb49cb69cf8b6d420b69e0b313097b25e983c81ce270be3968a2ddca",
+    "ring_metacarpals.STL": "e31345027027f50543192446327eb52fda373ee371378ac56d59b6e3a8183100",
+    "ring_middle.STL": "7571b16629b018e9375a9641aeadb5472006c28f8921ffe707d8a2a7e2665cb8",
+    "ring_proximal.STL": "1604c81101e9bb5e666123506563a8655173b3d49680e88f945be23089de209d",
+    "thumb_distal.STL": "18228b0b2bdf24f433d135a912b90305849d78a384a260043e321efdec37a58c",
+    "thumb_metacarpals.STL": "85fbc694af273729750dbd128627b2aeb259daa115f763ecd83379367ea47258",
+    "thumb_metacarpals_base1.STL": "cf646ac87b6ea06bcd4a00325673067c50cda0452cf2936811fe5dde7aab5d9b",
+    "thumb_metacarpals_base2.STL": "887e48745f6324a4964dfc88099e4c8643e92cb5c53fc956e7230fae74e4d556",
+    "thumb_proximal.STL": "fd0d83782b8921a79976999e757888a950e1e5bd90d94eeed9df5024fb9d70f6"
+  },
+  "digest_algorithm": "sha256-canonical-json-excluding-model-digest",
+  "model_digest": "5097fa3ba9d8c35aff327466e1c0ad217a236e24805d9c00394e63e52a8cb005"
+}

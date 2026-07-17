@@ -1,0 +1,33 @@
+{
+  "fixture_id": "linker-g20-left-mapping-v1",
+  "semantic_schema_id": "linker-g20-left-semantic-16-v1",
+  "semantic_schema_digest": "ce53ccafeb70a7bd9ba203576f7e54f330e106c0676ef90f8262d2a9ffa34ba7",
+  "calibration_id": "linker-g20-left-lht20-010-415-v1",
+  "calibration_digest": "1e20d989a14aa9fe127e78680decb9bb29679858e223c41ad28ae67a598d51df",
+  "cases": [
+    {
+      "name": "semantic-lower-limits",
+      "semantic_radians": [-0.17, 0.0, 0.0, -0.17, 0.0, 0.0, -0.17, 0.0, 0.0, -0.17, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+      "native_range": [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255, 255]
+    },
+    {
+      "name": "semantic-upper-limits",
+      "semantic_radians": [0.17, 1.4, 1.57, 0.17, 1.4, 1.57, 0.17, 1.4, 1.57, 0.17, 1.4, 1.57, 1.4, 1.22, 0.79, 1.05],
+      "native_range": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "name": "thumb-slot-5-10-regression",
+      "semantic_radians": [-0.17, 0.0, 0.0, -0.17, 0.0, 0.0, -0.17, 0.0, 0.0, -0.17, 0.0, 0.0, 0.7, 0.61, 0.395, 0.525],
+      "native_range": [128, 255, 255, 255, 255, 128, 255, 255, 255, 255, 128, 0, 0, 0, 0, 128, 255, 255, 255, 255],
+      "assertions": {
+        "thumb_cmc_yaw_slot": 10,
+        "thumb_cmc_roll_slot": 5
+      }
+    },
+    {
+      "name": "verified-pregrasp",
+      "semantic_radians": [0.07, 0.140535, 1.379901, -0.07, 0.184823, 1.354472, -0.07, 0.449762, 1.207458, 0.045669, 0.654302, 1.027913, 0.673745, 1.12, 0.1, 0.876434],
+      "native_range": [223, 229, 221, 173, 136, 21, 75, 180, 180, 93, 132, 0, 0, 0, 0, 42, 31, 35, 59, 88]
+    }
+  ]
+}
