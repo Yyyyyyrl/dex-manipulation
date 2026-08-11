@@ -2,7 +2,7 @@
 
 This runbook covers only the adopted M0-M3 hand-only path. The current checkout
 has not passed the physical release gates listed in `implementation-progress.md`.
-Do not use it for a live hand until the deployment binding, E-stop, Manus,
+Do not use it for a live hand until the deployment binding, E-stop, OpenXR,
 PCsensor, CAN, and task-specific HIL checks are confirmed.
 
 ## Preconditions
@@ -13,8 +13,8 @@ Before a live run, all of the following must be true:
 2. The hand identity is the confirmed LinkerHand G20 left hand and the serial
    matches the frozen calibration.
 3. The pinned Linker SDK G20 driver digest passes bootstrap verification.
-4. The configured Manus source produces the expected left-hand layout and
-   remains fresh.
+4. Quest 3S is connected through WiVRn, the OpenXR session is focused, and all
+   26 left-hand joints required by DexPilot remain valid and fresh.
 5. The PCsensor device is visible at the configured evdev by-id path, reports
    USB `3553:b001`, advertises KEY_F12, and can be grabbed exclusively.
 6. A real exported policy package is in an immutable local store.
@@ -54,6 +54,236 @@ dex-runtime list-policies /absolute/path/to/deployment.json
 
 Stop if preflight reports any identity, digest, schema, calibration, codec,
 rate, acknowledgement, action-limit, or calibrated-envelope mismatch.
+
+## Live control console
+
+The console is an English-only, loopback-only operator surface. It uses bundled
+and digest-verified WOFF2 fonts; it does not load fonts, JavaScript, or other
+assets from the network. Its telemetry paths are read-only. The only browser
+actions are the existing F12 transition request and safe-stop request.
+
+Install the scoped D435 USB permission rule once on a new host, then unplug and
+reconnect the camera as instructed:
+
+```bash
+./tools/install_d435_udev.sh
+```
+
+The installer requires the exact `INSTALL D435 RULE` token and sudo. It installs
+only the Intel `8086:0b07` D435 rule bundled from librealsense v2.58.3; it does
+not install a kernel patch or start a camera or robot process.
+
+Run the import and argument check without opening CAN, UDP listeners, or an HTTP
+server:
+
+```bash
+.venv/bin/python tools/switch_web_demo.py \
+  --dry-run --transport fake --policy synthetic \
+  --vr off --arm-telemetry live --camera off
+```
+
+Rehearse the complete console without hardware:
+
+```bash
+.venv/bin/python tools/switch_web_demo.py \
+  --transport fake --policy synthetic \
+  --vr fake --vr-python .venv/bin/python \
+  --arm-telemetry fake --camera fake
+```
+
+Open `http://127.0.0.1:8765/`. The simulated sources are explicitly labelled
+`SIMULATED`; they are never presented as real healthy hardware.
+
+For the authorized real OpenXR + LinkerHand + Hitbot monitoring stack, the
+supervised one-command launcher is preferred over starting three terminals by
+hand:
+
+```bash
+cd /home/user/dex-manipulation
+./tools/start_live_ui.sh
+```
+
+The launcher checks the pinned environments, D435 Python capability, active
+Hitbot Ethernet profile, 1 Mbit/s `can0`, robot reachability, duplicate UI/arm
+owners, `/home/user/dex_teleop/main_new.py`/`VRHandReader`, OpenXR Python
+support, and healthy D435 RGB/depth frames.
+By default it starts `flatpak run io.github.wivrn.wivrn//stable` before the OpenXR
+bridge. If that Flatpak is already running, the launcher reuses it and does not
+stop the externally owned instance. Use `--no-wivrn` only for an OpenXR runtime
+managed outside this launcher.
+The UI and camera intentionally use separate Python environments. The D435
+worker defaults to `/home/user/miniconda3/bin/python`, matching the verified
+`dex-forge/tools/realsense_capture.py --live` path. Override it only when a
+different executable has itself been verified:
+
+```bash
+DEX_CAMERA_PYTHON=/absolute/path/to/python ./tools/start_live_ui.sh
+```
+
+It requires the exact `CONFIRM` token before starting hardware, uses only the
+synthetic policy in `RL_SHADOW`, and never sends `/api/switch` or an F12 event.
+The default live mode is monitoring-only: the switch control and backend switch
+endpoint remain disabled by the physical-release gate. The implemented Hitbot
+hold gateway does not become operator-accessible merely because telemetry is
+healthy. Do not interpret LinkerHand readiness as arm-hold proof.
+It writes per-process logs below
+`.artifacts/control-console/live-runs/<UTC-time>-<pid>/`, opens the loopback UI,
+and remains in the foreground as the process supervisor. Press Ctrl-C in that
+terminal for ordered shutdown. Monitoring mode stops Hitbot before the UI;
+real-arm switch mode first completes UI hand-back/re-anchor while the hold
+controller is alive, then stops Hitbot and OpenXR. A 10-second hand-back timeout
+continues bounded shutdown and must be recorded as a failed HIL run.
+
+Useful variants:
+
+```bash
+./tools/start_live_ui.sh --dry-run
+./tools/start_live_ui.sh --no-browser
+./tools/start_live_ui.sh --no-hitbot
+```
+
+Only during an explicitly authorized real-arm hold HIL gate, use:
+
+```bash
+./tools/start_live_ui.sh --enable-rl-switch
+```
+
+This variant requires both `CONFIRM` and the separate exact token `ENABLE RL`.
+The button remains unavailable until the loopback hold controller answers with
+the matching session and arm epoch. This option is not released for unattended
+or routine operation until the pending acceptance notes below pass.
+
+The switch gate text is intentionally explicit:
+
+- `RL SWITCH NOT AUTHORIZED` means the launcher was not given the physical
+  release option and token.
+- `ARM HOLD NOT READY` means switching was authorized but the verified Hitbot
+  hold controller is not reachable or healthy.
+- `ARM HOLD READY` means the authorization and live hold probe both passed;
+  normal runtime readiness and physical supervision still apply.
+
+Run the reproducible five-minute bounded-state, refresh, and slow-client check:
+
+```bash
+.venv/bin/python tools/control_console/soak_verify.py \
+  --duration-s 300 --viewer-count 2 \
+  --output .artifacts/control-console/fake-soak-300s.json
+```
+
+This verifier is hard-coded to fake transport, synthetic policy, fake OpenXR,
+fake D435, and fake arm telemetry. It cannot be configured for hardware and never calls
+the switch or stop endpoints. It waits for the three 200-point latency rings,
+measures a no-viewer phase, then adds two repeated-refresh viewers and one SSE
+viewer that intentionally does not consume its response body. A nonzero exit
+means the health, identity, viewer, memory-budget, or bounded-history check
+failed.
+
+Interpret the five areas as follows:
+
+- `OPENXR HAND TRACKING` shows the exact 26-joint Quest/WiVRn sample consumed
+  by the production DexPilot retargeter. The OpenXR and Linker control sample
+  sequences must correlate.
+- `LINKERHAND G20` shows all 16 semantic joints. Cyan is measured, purple is
+  requested, green is safety-authorized, and amber is the effective target.
+  Owner, epoch, acknowledgement, and command identity must agree.
+- `D435 LIVE VIEW` shows the complete RGB frame with colorized depth in the
+  picture-in-picture window. Its source runs independently and read-only;
+  `STALE` or `FAULT` does not authorize, block, or modify a robot command.
+- `HITBOT ARM` shows tracker-derived target TCP, the actual TCP already read by
+  that control cycle, IK/ServoJ result, cycle timing, and bounded XY/XZ trails.
+  The console never opens the Hitbot socket and never sends an arm target.
+- `READINESS` is the exact provider evidence from one completed control tick:
+  operator confirmation, hand state, gateway health, and policy compatibility.
+
+Operator confirmation is deliberately time-bounded. If `OPERATOR` shows
+expired, recheck hardware identity, task state, workspace clearance, and E-stop
+access, then click `CONFIRM OPERATOR`. This refreshes only the operator evidence;
+it does not press F12, transfer ownership, or automatically renew again. The
+button reads `OPERATOR CONFIRMED` and disables itself while that evidence is
+valid.
+
+`DEGRADED`, `STALE`, and `FAULT` are explicit text states, not color-only
+indicators. A degraded source may retain its last geometry for diagnosis; stale
+or faulted OpenXR geometry is hidden. Hover a source or readiness item for its
+reason. Never infer safe motion from a plausible-looking plot.
+
+### Authorized live observation
+
+The following commands are not a read-only HIL test: the console command opens
+the real Linker CAN transport, and the dex_teleop command runs the existing
+Hitbot tracker controller. They may actuate hardware. Run them only after every
+physical precondition above passes, the E-stop is staffed, and the run is
+explicitly authorized.
+
+Start the Linker/OpenXR runtime and its loopback console from this repository:
+
+```bash
+.venv/bin/python tools/switch_web_demo.py \
+  --transport hand --policy real --deploy /absolute/path/to/deploy.pth \
+  --vr real --vr-python /home/user/miniconda3/envs/dexmachina/bin/python \
+  --teleop-root /home/user/dex_teleop \
+  --arm-telemetry live --arm-udp-port 8780 \
+  --arm-hold-port 8781
+```
+
+If the authorized Hitbot tracking session is part of the test, start the single
+OpenXR/Hitbot owner in a separate terminal. It consumes the bridge fanout on
+UDP 8771 and publishes telemetry on UDP 8780:
+
+```bash
+cd /home/user/dex-manipulation
+.venv-hitbot/bin/python tools/vr_hitbot_controller.py \
+  --vr-port 8771 --telemetry-port 8780 --hold-port 8781 \
+  --teleop-root /home/user/dex_teleop
+```
+
+The commands above still start in monitoring-only mode. The direct UI command
+may include `--enable-real-arm-hold-switch` only inside the same explicitly
+authorized HIL gate. During hold, `vr_hitbot_controller.py` remains the only
+Hitbot SDK owner,
+repeats one fixed ServoJ target, verifies actual TCP stability, and discards
+OpenXR wrist deltas. A missing heartbeat enters `FAULT_HOLD` and never resumes
+tracking automatically. Release requires a fresh OpenXR re-anchor acknowledgement.
+
+From a third terminal, capture one minute of loopback-only GET evidence. For
+Gate B, require the real OpenXR and Linker sources:
+
+```bash
+cd /home/user/dex-manipulation
+.venv/bin/python tools/control_console/hil_observe.py \
+  --url http://127.0.0.1:8765 --duration-s 60 \
+  --require openxr linker \
+  --output /absolute/path/to/hil-openxr-linker.json
+```
+
+For the combined Gate B/C observation after the authorized Hitbot owner is
+running, require all three sources:
+
+```bash
+.venv/bin/python tools/control_console/hil_observe.py \
+  --url http://127.0.0.1:8765 --duration-s 60 \
+  --require openxr linker hitbot \
+  --output /absolute/path/to/hil-openxr-linker-hitbot.json
+```
+
+The observer cannot start a runtime or hardware connection. It accepts only a
+loopback HTTP base URL and sends only `GET /api/snapshot`. It rejects simulated
+OpenXR/Hitbot modes and fails if readiness, source health, focused 26-joint layout,
+OpenXR-to-Linker sequence identity, 16-joint state, epoch, acknowledgement,
+command identity, tracker pose, TCP, or IK evidence is missing at any sampled
+instant. Preserve a passing JSON report with the console/controller logs; never
+edit a failed report into a pass.
+
+Do not start a second Linker SDK/CAN process or another Hitbot interface. Keep
+the console and publisher on loopback and keep UDP port 8780 identical on both
+sides. Killing the browser or the Hitbot telemetry publisher must not be used as
+a motion-stop mechanism; use normal hand-back/shutdown or the independent
+E-stop as appropriate.
+
+For normal console shutdown, return the hand to teleoperation, use `SAFE STOP`,
+wait for the stopped state, and then Ctrl-C the console process. Stop the
+dex_teleop owner through its existing Ctrl-C procedure. Preserve the console
+runtime logs shown in the footer together with the dex_teleop test record.
 
 ## Live hand-only process
 
