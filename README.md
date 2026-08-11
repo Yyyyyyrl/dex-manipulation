@@ -1,59 +1,107 @@
 # dex-manipulation
 
-Neutral hardware runtime for the Dexterous Manipulation Architecture V2.1.
-This repository owns contracts, teleoperation adapters, policy execution,
-exclusive hardware gateways, handoff supervision, and observability. It does
-not depend on Isaac Lab or import `dex-forge` training code.
+*[English](README.md) | [中文](README.zh.md)*
 
-The implemented delivery boundary is the document's thin critical path:
+Neutral hardware runtime for mixed teleoperation / reinforcement-learning
+control of a dexterous hand.
 
-- M0: frozen Linker mapping, calibration, schema, and canonical model;
-- M1: internal contracts, OpenXR/DexPilot semantic retargeting, and exclusive Linker gateway;
-- M2: exact policy codecs, continuous shadow, fake-arm handoff, blend, and hand-back;
-- M3: JSONL events/traces, terminal status, and F12 PCsensor switching.
+This repository owns the internal contracts, teleoperation adapters, policy
+execution, exclusive hardware gateways, handoff supervision, and observability.
+It does not train policies, does not depend on Isaac Lab, and does not import
+`dex-forge` training code.
 
-Perception, multi-process, replay, and real-policy arm-control release work
-remain deferred or gated as recorded in the implementation plan.
+```
+operator device ──▶ retargeting ──▶ ┌───────────────┐ ──▶ safety ──▶ gateway ──▶ hand
+                                    │   handoff     │
+trained policy  ──▶ inference  ──▶ │  supervisor   │ ◀── readiness evidence
+                                    └───────────────┘ ◀──▶ arm hold lease
+```
 
-Run `./bootstrap.sh`, then `source .venv/bin/activate` and `pytest`.
+The supervisor decides who is allowed to move the hand. Every forward step
+toward policy control is gated on readiness evidence, a full policy observation
+history, and a verified arm hold; every failure falls back to holding still.
 
-After the documented hardware and E-stop preconditions pass, start the
-supervised English live console with:
+## Quickstart
 
 ```bash
-./tools/start_live_ui.sh
+./bootstrap.sh core          # use Python 3.10-3.12
+source .venv/bin/activate
+python -m pytest             # 119 tests, no hardware
+
+# run the whole stack with no hardware at all
+python -m tools.control_console.soak_verify --duration-s 30 --viewer-count 1
+
+# or look at it: http://127.0.0.1:8765/
+python tools/switch_web_demo.py --transport fake --policy synthetic \
+    --vr fake --vr-python .venv/bin/python --arm-telemetry fake --camera fake
 ```
 
-The launcher requires the exact `CONFIRM` token, runs
-`flatpak run io.github.wivrn.wivrn//stable`, starts the Quest 3S/WiVRn
-OpenXR hand source, LinkerHand, the read-only D435 RGB/depth source in the
-host's isolated camera Python, and the single OpenXR/Hitbot owner, opens
-`http://127.0.0.1:8765/`, and keeps the synthetic policy in `RL_SHADOW`. Press
-Ctrl-C in the launcher terminal for ordered safe shutdown. Use `--dry-run` to
-check prerequisites without starting hardware. When real Hitbot telemetry is
-enabled, both the UI control and the backend switch endpoint remain disabled
-by default. The real-arm hold gateway is implemented, but
-`--enable-rl-switch` is reserved for the documented, explicitly authorized HIL
-release sequence. The UI distinguishes an unauthorized switch from an
-authorized switch that is still waiting for verified arm hold.
+`--transport` only selects the *hand*. The policy, operator input, camera, and
+arm telemetry each default to real and must be faked separately, as above.
 
-The OpenXR integration imports `VRHandReader`, wrist-delta transforms, and arm
-controller contracts from `/home/user/dex_teleop/main_new.py` and its modules.
-It does not run `main_new.py` as a second LinkerHand owner: the exclusive
-`LinkerGateway` in this repository remains the only CAN/hand command path.
-Use `--no-wivrn` only when WiVRn is already managed externally.
+Full walkthrough in [docs/onboarding.md](docs/onboarding.md).
 
+## Documentation
 
-Implementation status and uncompleted physical release gates are recorded in
-[`docs/implementation-progress.md`](docs/implementation-progress.md). The
-approved hand-only operating and teleop-only rollback procedure is in
-[`docs/operator-runbook.md`](docs/operator-runbook.md).
+| | Read it for |
+|---|---|
+| [Onboarding](docs/onboarding.md) · [中文](docs/zh/onboarding.md) | Getting it running, repository map, troubleshooting |
+| [Architecture](docs/architecture.md) · [中文](docs/zh/architecture.md) | The control path, the state machine, and why it is built this way |
+| [Teleop interface](docs/interfaces/teleop.md) · [中文](docs/zh/interfaces/teleop.md) | Adding an operator device |
+| [Policy interface](docs/interfaces/policy.md) · [中文](docs/zh/interfaces/policy.md) | Packaging and deploying a trained policy |
+| [Hardware interface](docs/interfaces/hardware.md) | Adding a hand or an arm |
+| [Tools](docs/tools.md) | What every script in `tools/` is for |
+| [Operator runbook](docs/operator-runbook.md) | **The authority for anything touching real hardware** |
+| [Implementation progress](docs/implementation-progress.md) | Delivery status and open physical release gates |
 
-The implemented operator commands are:
+## CLI
 
-```text
-dex-runtime preflight CONFIG
-dex-runtime run CONFIG
-dex-runtime list-policies CONFIG
+```bash
+dex-runtime preflight CONFIG                             # prove a deployment, actuate nothing
+dex-runtime run CONFIG                                   # start the runtime
+dex-runtime list-policies CONFIG                         # inspect the configured policy stores
 dex-runtime verify-package PACKAGE [--allow-unsigned-local]
 ```
+
+## Safety
+
+This moves real hardware. [`docs/operator-runbook.md`](docs/operator-runbook.md)
+is the authority; the essentials:
+
+- E-stop and the documented preconditions come first.
+- Fake mode is genuinely isolated. `--transport fake` and the soak verifier
+  cannot open CAN, OpenXR, camera, or arm hardware.
+- Real-arm switching is off by default. `--enable-rl-switch` is reserved for an
+  explicitly authorized hardware-in-the-loop sequence.
+- One owner per resource. Never run the LinkerHand ROS SDK alongside this
+  runtime, and never start a second Hitbot owner. The exclusive `LinkerGateway`
+  is the only CAN/hand command path; `dex_teleop/main_new.py` is imported for
+  its reader and transform code but never run as a second hand owner.
+- Ctrl-C in the launcher terminal is the supported stop; it shuts down in order.
+
+## Scope
+
+The implemented delivery boundary is the architecture document's thin critical
+path:
+
+- **M0** — frozen Linker mapping, calibration, schema, and canonical model
+- **M1** — internal contracts, OpenXR/DexPilot semantic retargeting, exclusive Linker gateway
+- **M2** — exact policy codecs, continuous shadow, fake-arm handoff, blend, hand-back
+- **M3** — JSONL events and traces, terminal status, F12 PCsensor switching
+
+Perception, multi-process operation, replay, and real-policy arm control remain
+deferred or gated, as recorded in
+[docs/implementation-progress.md](docs/implementation-progress.md).
+
+## Development
+
+```bash
+python -m pytest       # tests
+lint-imports           # layering contracts (enforced in CI)
+ruff check . && ruff format --check .
+mypy
+```
+
+The layering in [`.importlinter`](.importlinter) is enforced, not advisory:
+`dex_contracts` depends on nothing, teleop adapters may not reach hardware or
+the runtime, and the hardware adapter may not reach the supervisor.
