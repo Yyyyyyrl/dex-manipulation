@@ -22,16 +22,18 @@ if [[ "${PROFILE}" == "core" ]]; then
   exit 0
 fi
 
-"${PIP}" install -e "${ROOT}[manus,linker,pedal,dev]" --no-deps
+"${PIP}" install -e "${ROOT}[manus,linker,pedal,camera,dev]" --no-deps
 "${PIP}" install \
   "numpy==1.26.0" \
   "PyYAML==6.0.2" \
   "safetensors==0.7.0" \
   "python-can==4.6.1" \
   "evdev==1.7.1" \
+  "opencv-python-headless==4.11.0.86" \
+  "pyrealsense2==2.58.3.10794" \
   "pytest==9.0.3" \
   "import-linter==2.3" \
-  "dex-retargeting @ git+https://github.com/dexsuite/dex-retargeting.git@3f56141bc8bd2760d5e452e382937269554ebb21"
+  "dex-retargeting @ git+https://github.com/dexsuite/dex-retargeting.git@8632b2cab32e1b51ce379940c414a0f78332ff6b"
 
 SDK_DIR="${ROOT}/.vendor/linkerhand-ros-sdk"
 SDK_COMMIT="2aa379cd11562d953f8b449561107b58c120676e"
