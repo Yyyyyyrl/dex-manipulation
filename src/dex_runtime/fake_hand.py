@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import time
 import uuid
-from typing import Callable
+from collections.abc import Callable
+from dataclasses import dataclass
 
 from dex_contracts import (
     AcknowledgementLevel,
     EffectiveHandTarget,
     GatewayAcknowledgement,
     HandCommandAcknowledgement,
-    OwnerKind,
     OwnershipState,
     ResourceId,
 )

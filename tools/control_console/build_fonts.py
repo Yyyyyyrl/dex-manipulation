@@ -5,10 +5,9 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-from pathlib import Path
 import subprocess
 import sys
-
+from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 OUTPUT = HERE / "assets" / "fonts"

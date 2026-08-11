@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import argparse
-from multiprocessing.connection import Connection
 import signal
 import sys
 import threading
 import time
+from multiprocessing.connection import Connection
 
 
 def _watch_parent(stop: threading.Event) -> None:

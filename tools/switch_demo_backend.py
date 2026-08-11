@@ -10,20 +10,19 @@ lazily, so the ``fake`` transport path runs anywhere with only the core deps.
 
 from __future__ import annotations
 
-from dataclasses import replace
 import hashlib
 import json
 import math
-from pathlib import Path
 import queue
 import sys
 import tempfile
 import threading
 import time
+from dataclasses import replace
+from pathlib import Path
 
-from safetensors.torch import load_file, save_file
 import torch
-
+from safetensors.torch import load_file, save_file
 
 ROOT = Path(__file__).resolve().parents[1]
 TESTS = ROOT / "tests"
@@ -31,9 +30,9 @@ if str(TESTS) not in sys.path:
     sys.path.insert(0, str(TESTS))
 
 from dex_contracts import (  # noqa: E402
+    PROTOCOL_VERSION,
     AcknowledgementLevel,
     MessageIdentity,
-    PROTOCOL_VERSION,
     ResourceId,
     SourceHealth,
     TeleopHandCandidate,
@@ -62,7 +61,6 @@ from policy_package_factory import (  # noqa: E402
     rewrite_manifest,
     write_test_package,
 )
-
 
 CAN_ID = 0x28
 CONTROL_PERIOD_NS = 100_000_000
@@ -247,7 +245,7 @@ class VisibleWaveRetargeter:
             return True
         if self.base is None:
             return False
-        return all(abs(b - h) <= 1e-3 for b, h in zip(self.base, self.home_posture))
+        return all(abs(b - h) <= 1e-3 for b, h in zip(self.base, self.home_posture, strict=False))
 
     def reset(self) -> None:
         self.sequence = 0
@@ -274,7 +272,7 @@ class VisibleWaveRetargeter:
             # so the hand tracks without tripping delta/following-error limits.
             self.base = tuple(
                 current + max(-self.RAMP_STEP_RAD, min(self.RAMP_STEP_RAD, home - current))
-                for current, home in zip(self.base, self.home_posture)
+                for current, home in zip(self.base, self.home_posture, strict=False)
             )
         elapsed_s = (sample.received_time_ns - self.started_ns) / 1_000_000_000
         phase = 2.0 * math.pi * TELEOP_FREQUENCY_HZ * elapsed_s
@@ -356,17 +354,17 @@ class BoundedTeleopRetargeter:
             self._last_target = tuple(state.semantic_position)
         bounded = tuple(
             min(max(value, lower), upper)
-            for value, lower, upper in zip(raw.semantic_position, self.lower, self.upper)
+            for value, lower, upper in zip(raw.semantic_position, self.lower, self.upper, strict=False)
         )
         ramped = tuple(
             current
             + max(-self.RAMP_STEP_RAD, min(self.RAMP_STEP_RAD, desired - current))
-            for current, desired in zip(self._last_target, bounded)
+            for current, desired in zip(self._last_target, bounded, strict=False)
         )
         self._last_target = ramped
         clipped = sum(
             value != bounded_value
-            for value, bounded_value in zip(raw.semantic_position, bounded)
+            for value, bounded_value in zip(raw.semantic_position, bounded, strict=False)
         )
         return replace(
             raw,
@@ -610,7 +608,7 @@ def build_runtime(
     else:
         midpoint = tuple(
             (lower + upper) * 0.5
-            for lower, upper in zip(CALIBRATION_LOWER, CALIBRATION_UPPER)
+            for lower, upper in zip(CALIBRATION_LOWER, CALIBRATION_UPPER, strict=False)
         )
         initial_native = mapper.prepare(midpoint).native_range
     current_semantic = mapper.inverse(initial_native)
@@ -630,7 +628,7 @@ def build_runtime(
             (lower + upper) * 0.5
             for lower, upper in zip(
                 action_transform["position_lower_rad"],
-                action_transform["position_upper_rad"],
+                action_transform["position_upper_rad"], strict=False,
             )
         )
     else:

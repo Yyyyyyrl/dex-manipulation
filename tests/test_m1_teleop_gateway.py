@@ -7,20 +7,19 @@ from pathlib import Path
 import numpy as np
 
 from dex_contracts import (
+    PROTOCOL_VERSION,
     AcknowledgementLevel,
     AuthorizedHandCommand,
     CommandMode,
     MessageIdentity,
     OwnerKind,
     OwnershipState,
-    PROTOCOL_VERSION,
     ResourceId,
     SourceHealth,
     TimestampedSample,
 )
 from dex_hardware_linker import FakeLinkerTransport, GatewayConfig, LinkerGateway, LinkerMapper
 from dex_teleop_adapters import ManusKeypoints, ManusRetargeter, TeleopProfile
-
 
 ROOT = Path(__file__).resolve().parents[1]
 

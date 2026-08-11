@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
 import queue
 import threading
 import time
 import uuid
-from typing import Callable
+from collections.abc import Callable
+from dataclasses import dataclass, replace
 
 from dex_contracts import (
+    PROTOCOL_VERSION,
     AcknowledgementLevel,
     AuthorizedHandCommand,
     CommandMode,
@@ -20,7 +21,6 @@ from dex_contracts import (
     MessageIdentity,
     OwnerKind,
     OwnershipState,
-    PROTOCOL_VERSION,
     ResourceId,
 )
 

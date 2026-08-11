@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import fields, is_dataclass
 from enum import Enum
-import json
 from typing import Any
 
 

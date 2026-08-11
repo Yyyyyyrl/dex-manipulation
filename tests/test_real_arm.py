@@ -36,7 +36,7 @@ class _ProtocolServer:
         while not self.stop.is_set():
             try:
                 data, address = self.socket.recvfrom(8192)
-            except socket.timeout:
+            except TimeoutError:
                 continue
             request = json.loads(data)
             self.requests.append(request)

@@ -2,20 +2,20 @@ from __future__ import annotations
 
 import http.client
 import json
-from pathlib import Path
 import re
 import shutil
 import threading
 import time
+from pathlib import Path
 
 import pytest
 
 from dex_runtime.telemetry import TelemetryEnvelope, TelemetryHealth, TelemetryHub
+from policy_package_factory import write_test_package
 from tools.control_console.server import ASSETS_DIR, make_console_server, verify_assets
 from tools.control_console.telemetry import ConsoleTelemetryPump, SyntheticArmTelemetry
-from tools.switch_web_demo import DemoController
 from tools.switch_demo_backend import CONTROL_PERIOD_NS, _base_config
-from policy_package_factory import write_test_package
+from tools.switch_web_demo import DemoController
 
 
 class _Controller:

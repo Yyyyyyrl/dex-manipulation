@@ -9,13 +9,12 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import statistics
 import time
-from urllib.parse import urlsplit
 import urllib.error
 import urllib.request
-
+from pathlib import Path
+from urllib.parse import urlsplit
 
 KNOWN_SOURCES = ("openxr", "linker", "hitbot")
 

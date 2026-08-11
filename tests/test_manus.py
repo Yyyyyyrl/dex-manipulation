@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -10,7 +10,6 @@ import pytest
 from dex_contracts import SourceHealth
 from dex_teleop_adapters import ManusHandSource, ManusRetargeter, TeleopProfile
 from dex_teleop_adapters.manus_math import EXPECTED_LAYOUT
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -132,8 +131,8 @@ def test_retargeter_projects_by_name_and_keeps_confirmed_bias_in_profile():
         task_id="task",
         task_version="1.0",
     )
-    by_name = dict(zip(backend.joint_names, backend.retarget(None)))
-    for name, value in zip(profile.semantic_joint_names, candidate.semantic_position):
+    by_name = dict(zip(backend.joint_names, backend.retarget(None), strict=False))
+    for name, value in zip(profile.semantic_joint_names, candidate.semantic_position, strict=False):
         expected = by_name[name]
         if name == "thumb_cmc_roll":
             expected += profile.thumb_cmc_roll_bias_rad

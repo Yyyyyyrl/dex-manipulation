@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
-from pathlib import Path
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 
 from dex_contracts import (
-    MessageIdentity,
     PROTOCOL_VERSION,
+    MessageIdentity,
     ResourceId,
     SourceHealth,
     TeleopHandCandidate,
@@ -110,7 +111,7 @@ class ManusRetargeter:
             raise ValueError(
                 f"retargeter output shape {qpos.shape} does not match joint-name count"
             )
-        by_name = dict(zip(self._retarget_joint_names, (float(value) for value in qpos)))
+        by_name = dict(zip(self._retarget_joint_names, (float(value) for value in qpos), strict=False))
         semantic = [by_name[name] for name in self.profile.semantic_joint_names]
         thumb_index = self.profile.semantic_joint_names.index("thumb_cmc_roll")
         semantic[thumb_index] += self.profile.thumb_cmc_roll_bias_rad

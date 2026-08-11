@@ -8,13 +8,13 @@ camera failure remains isolated from hand/arm control.
 from __future__ import annotations
 
 import math
-from multiprocessing.connection import Connection
 import os
-from pathlib import Path
 import subprocess
 import sys
 import threading
 import time
+from multiprocessing.connection import Connection
+from pathlib import Path
 
 
 class _LatestCameraSource:

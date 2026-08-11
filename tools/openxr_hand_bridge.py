@@ -12,14 +12,13 @@ from __future__ import annotations
 import argparse
 import json
 import math
-from pathlib import Path
 import socket
 import sys
 import threading
 import time
+from pathlib import Path
 
 import numpy as np
-
 
 SCHEMA_VERSION = 1
 LAYOUT_ID = "openxr-hand-26-v1"
@@ -115,7 +114,7 @@ def _joint_records(
     valid: np.ndarray,
 ) -> list[dict[str, object]]:
     records = []
-    for index, (name, parent) in enumerate(zip(JOINT_NAMES, PARENT_IDS)):
+    for index, (name, parent) in enumerate(zip(JOINT_NAMES, PARENT_IDS, strict=False)):
         position = positions[index] if bool(valid[index]) else np.zeros(3)
         orientation = orientations[index] if bool(valid[index]) else np.array([0.0, 0.0, 0.0, 1.0])
         radius = float(radii[index]) if math.isfinite(float(radii[index])) else 0.0
@@ -211,7 +210,7 @@ def _fake_pose(phase: float) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.nda
     finger_lengths = (4, 5, 5, 5, 5)
     x_offsets = (-0.045, -0.025, 0.0, 0.024, 0.046)
     curl = 0.22 + 0.18 * (0.5 + 0.5 * math.sin(phase))
-    for root, count, x_offset in zip(finger_roots, finger_lengths, x_offsets):
+    for root, count, x_offset in zip(finger_roots, finger_lengths, x_offsets, strict=False):
         base = positions[0] + (x_offset, 0.0, 0.0)
         for offset in range(count):
             distance = 0.025 * (offset + 1)

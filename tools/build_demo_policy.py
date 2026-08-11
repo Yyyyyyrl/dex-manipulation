@@ -21,15 +21,14 @@ weights are used verbatim; only metadata changes.
 from __future__ import annotations
 
 import argparse
-from copy import deepcopy
 import hashlib
 import json
-from pathlib import Path
 import sys
 import tempfile
+from copy import deepcopy
+from pathlib import Path
 
 from dex_contracts import canonical_json
-
 
 ROOT = Path(__file__).resolve().parents[1]
 DEX_FORGE = Path("/home/user/dex-forge")
@@ -69,7 +68,7 @@ def _assert_within_g20_envelope(action_transform: dict) -> None:
     lower = [float(v) for v in action_transform["position_lower_rad"]]
     upper = [float(v) for v in action_transform["position_upper_rad"]]
     for i, (pl, pu, sl, su) in enumerate(
-        zip(lower, upper, CALIBRATION_LOWER, CALIBRATION_UPPER)
+        zip(lower, upper, CALIBRATION_LOWER, CALIBRATION_UPPER, strict=False)
     ):
         if pl < sl or pu > su:
             raise ValueError(

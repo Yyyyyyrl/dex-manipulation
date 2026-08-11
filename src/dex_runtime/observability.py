@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-import json
-from pathlib import Path
 import threading
-from typing import Any, Mapping
+from collections.abc import Mapping
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 from dex_contracts import canonical_json, to_primitive
 
@@ -34,7 +34,7 @@ class JsonlWriter:
                 self._stream.close()
                 self._closed = True
 
-    def __enter__(self) -> "JsonlWriter":
+    def __enter__(self) -> JsonlWriter:
         return self
 
     def __exit__(self, *_args) -> None:

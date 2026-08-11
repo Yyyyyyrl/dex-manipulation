@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import time
 from copy import deepcopy
 from pathlib import Path
-import time
 
 import numpy as np
 import pytest
@@ -19,7 +19,6 @@ from dex_teleop_adapters import (
 )
 from tools.control_console.openxr_source import UdpOpenXRSource
 from tools.openxr_hand_bridge import _fake_pose, _joint_records
-
 
 ROOT = Path(__file__).resolve().parents[1]
 

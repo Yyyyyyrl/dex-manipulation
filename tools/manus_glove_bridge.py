@@ -24,12 +24,12 @@ that presentation state only after the same validated sample produced a command.
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
 import json
 import math
 import socket
 import threading
 import time
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
@@ -45,17 +45,17 @@ class _ManusBridgeFrame:
 def _ros_node_record(node: object) -> dict[str, int | float]:
     """Normalize MANUS Core's self-parented root to our tree contract."""
 
-    node_id = int(getattr(node, "node_id"))
-    parent = int(getattr(node, "parent_node_id"))
+    node_id = int(node.node_id)
+    parent = int(node.parent_node_id)
     if node_id == 0:
         parent = -1
-    pos = getattr(getattr(node, "pose"), "position")
+    pos = node.pose.position
     return {
         "id": node_id,
         "parent": parent,
-        "x": float(getattr(pos, "x")),
-        "y": float(getattr(pos, "y")),
-        "z": float(getattr(pos, "z")),
+        "x": float(pos.x),
+        "y": float(pos.y),
+        "z": float(pos.z),
     }
 
 
@@ -232,8 +232,8 @@ def run_fake(sock: socket.socket, host: str, port: int, glove_id: int, hz: float
 
 def run_real(sock: socket.socket, host: str, port: int, glove_id: int) -> None:
     import rclpy
-    from rclpy.node import Node
     from manus_ros2_msgs.msg import ManusGlove
+    from rclpy.node import Node
 
     publisher = ManusDatagramPublisher(sock, host, port)
 
@@ -243,7 +243,7 @@ def run_real(sock: socket.socket, host: str, port: int, glove_id: int) -> None:
             self._sequence = 0
             self.create_subscription(ManusGlove, f"/manus_glove_{glove_id}", self._on_glove, 20)
 
-        def _on_glove(self, msg: "ManusGlove") -> None:
+        def _on_glove(self, msg: ManusGlove) -> None:
             # Keep Manus Core's native left-handed coordinates. The retargeter
             # and UI each apply their own explicit conversion.
             nodes = [_ros_node_record(node) for node in msg.raw_nodes]

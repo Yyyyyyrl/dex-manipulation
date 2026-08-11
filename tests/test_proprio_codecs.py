@@ -12,7 +12,6 @@ from dex_runtime.codecs import (
     mounted_linker_g20_codec_spec,
 )
 
-
 FIXTURE = Path(__file__).parent / "fixtures/golden/proprio_codec_golden_v1.json"
 
 

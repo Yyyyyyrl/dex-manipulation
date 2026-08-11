@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from collections import deque
 import math
 import threading
 import time
-from typing import Callable
+from collections import deque
+from collections.abc import Callable
 
 from dex_runtime.telemetry import TelemetryEnvelope, TelemetryHealth, TelemetryHub
 

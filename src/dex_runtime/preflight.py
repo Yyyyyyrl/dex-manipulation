@@ -136,7 +136,7 @@ def preflight_deployment(config_path: str) -> PreflightResult:
             binding.safety.position_lower_rad,
             binding.safety.position_upper_rad,
             policy_lower,
-            policy_upper,
+            policy_upper, strict=False,
         )
     ):
         raise ValueError("policy action limits exceed deployment safety envelope")
@@ -148,7 +148,7 @@ def preflight_deployment(config_path: str) -> PreflightResult:
             binding.safety.position_lower_rad,
             binding.safety.position_upper_rad,
             calibration_lower,
-            calibration_upper,
+            calibration_upper, strict=False,
         )
     ):
         raise ValueError("deployment action limits exceed calibrated mapping limits")

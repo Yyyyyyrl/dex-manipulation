@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from enum import Enum, IntEnum
 from typing import Any
 
-
 PROTOCOL_VERSION = "1.0"
 
 

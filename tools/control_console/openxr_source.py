@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from collections import deque
 import json
 import math
 import socket
 import threading
 import time
-from typing import Callable, Mapping
+from collections import deque
+from collections.abc import Callable, Mapping
 
 from dex_contracts import SourceHealth, TimestampedSample
 from dex_teleop_adapters import (
@@ -19,7 +19,6 @@ from dex_teleop_adapters import (
     OpenXRSourceStatus,
     needed_openxr_joints_valid,
 )
-
 
 SCHEMA_VERSION = 1
 
@@ -270,7 +269,7 @@ class UdpOpenXRSource:
         while not self._stop.is_set():
             try:
                 data, address = self._sock.recvfrom(65535)
-            except socket.timeout:
+            except TimeoutError:
                 continue
             except OSError:
                 break

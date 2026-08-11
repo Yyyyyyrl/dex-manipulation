@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from copy import deepcopy
 import json
 import socket
 import threading
 import time
+from copy import deepcopy
 from types import SimpleNamespace
 
 import pytest

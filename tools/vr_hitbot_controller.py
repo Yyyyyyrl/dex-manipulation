@@ -3,19 +3,17 @@
 
 from __future__ import annotations
 
-from collections import OrderedDict
 import argparse
 import json
-import math
-from pathlib import Path
 import select
 import socket
 import sys
 import threading
 import time
+from collections import OrderedDict
+from pathlib import Path
 
 import numpy as np
-
 
 OPENXR_LAYOUT = "openxr-hand-26-v1"
 TRACKER_STALE_NS = 250_000_000
@@ -693,7 +691,7 @@ class OpenXRWristReceiver:
                 or isinstance(sample_ns, bool) or not isinstance(sample_ns, int)
                 or not isinstance(valid, list) or len(valid) != 26 or valid[1] is not True
                 or not isinstance(joints, list) or len(joints) != 26
-                or self.last_sequence is not None and sequence <= self.last_sequence
+                or (self.last_sequence is not None and sequence <= self.last_sequence)
             ):
                 return None
             wrist = joints[1]

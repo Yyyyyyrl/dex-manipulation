@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
 import math
 import socket
 import threading
 import time
 import uuid
-from typing import Callable
-
+from collections.abc import Callable
+from dataclasses import dataclass
 
 ARM_HOLD_SCHEMA_VERSION = 1
 MAX_DATAGRAM_BYTES = 8192
@@ -143,7 +142,7 @@ class RealArmGateway:
                 try:
                     self._sock.send(encoded)
                     data = self._sock.recv(MAX_DATAGRAM_BYTES)
-                except socket.timeout:
+                except TimeoutError:
                     continue
                 except OSError as exc:
                     self._set_disconnected(f"transport:{type(exc).__name__}")

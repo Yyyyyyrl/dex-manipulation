@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import FrozenInstanceError
 import json
+from dataclasses import FrozenInstanceError
 from pathlib import Path
 
 import pytest
 
 from dex_hardware_linker import LinkerMapper
-
 
 ROOT = Path(__file__).resolve().parents[1]
 

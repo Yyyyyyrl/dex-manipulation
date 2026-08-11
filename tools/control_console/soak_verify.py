@@ -9,10 +9,8 @@ cannot be configured to open CAN, OpenXR, camera, or Hitbot hardware.
 from __future__ import annotations
 
 import argparse
-from collections import deque
 import http.client
 import json
-from pathlib import Path
 import signal
 import socket
 import statistics
@@ -20,10 +18,11 @@ import subprocess
 import sys
 import threading
 import time
-from typing import Callable
 import urllib.error
 import urllib.request
-
+from collections import deque
+from collections.abc import Callable
+from pathlib import Path
 
 SOURCE_NAMES = ("runtime", "openxr", "linker", "hitbot", "d435")
 

@@ -13,7 +13,7 @@ def test_soak_command_is_hardware_forbidden() -> None:
         openxr_port=8001,
         arm_port=8002,
     )
-    pairs = dict(zip(command[2::2], command[3::2]))
+    pairs = dict(zip(command[2::2], command[3::2], strict=False))
     assert pairs["--transport"] == "fake"
     assert pairs["--policy"] == "synthetic"
     assert pairs["--vr"] == "fake"

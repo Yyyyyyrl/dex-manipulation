@@ -6,8 +6,9 @@ import torch
 from dex_runtime.policy_package import validate_policy_package
 from dex_runtime.policy_session import PolicySession, PolicySessionState
 from policy_package_factory import CALIBRATION_LOWER, CALIBRATION_UPPER, write_test_package
-MIDPOINT = [(lower + upper) * 0.5 for lower, upper in zip(CALIBRATION_LOWER, CALIBRATION_UPPER)]
-MEASURED = [lower + 0.45 * (upper - lower) for lower, upper in zip(CALIBRATION_LOWER, CALIBRATION_UPPER)]
+
+MIDPOINT = [(lower + upper) * 0.5 for lower, upper in zip(CALIBRATION_LOWER, CALIBRATION_UPPER, strict=False)]
+MEASURED = [lower + 0.45 * (upper - lower) for lower, upper in zip(CALIBRATION_LOWER, CALIBRATION_UPPER, strict=False)]
 
 
 @pytest.mark.parametrize(
@@ -62,7 +63,7 @@ def test_continuous_shadow_exact_rate_and_activation_has_no_double_step(
     assert after.state is PolicySessionState.ACTIVE
     assert after.history_count == before.history_count == 30
     assert after.preview_sequence == before.preview_sequence == 1
-    assert max(abs(value - expected) for value, expected in zip(activated.semantic_position, effective)) <= 0.05 + 1e-6
+    assert max(abs(value - expected) for value, expected in zip(activated.semantic_position, effective, strict=False)) <= 0.05 + 1e-6
 
     candidate = session.step(
         measured,

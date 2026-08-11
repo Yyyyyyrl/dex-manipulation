@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
 import json
 import math
+from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 
 def _digest(payload: Mapping[str, Any]) -> str:
@@ -37,7 +38,7 @@ class TeleopProfile:
     filter_reset: str
 
     @classmethod
-    def load(cls, path: str | Path, repository_root: str | Path) -> "TeleopProfile":
+    def load(cls, path: str | Path, repository_root: str | Path) -> TeleopProfile:
         source = Path(path)
         raw = json.loads(source.read_text(encoding="utf-8"))
         if not isinstance(raw, dict):

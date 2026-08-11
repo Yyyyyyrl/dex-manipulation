@@ -2,20 +2,19 @@
 
 from __future__ import annotations
 
-from copy import deepcopy
-from dataclasses import dataclass
 import hashlib
 import json
+from collections.abc import Mapping
+from copy import deepcopy
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping
 
-from safetensors.torch import load_file
 import torch
+from safetensors.torch import load_file
 
 from dex_contracts import PolicyCompatibility, PolicyDescriptor, canonical_json
 
 from .codecs import COLLECT_FRESH_HISTORY, ProprioCodecSpec
-
 
 PACKAGE_FORMAT = "dex-policy-package"
 PACKAGE_FORMAT_VERSION = 1
@@ -266,7 +265,7 @@ def _validate_manifest_structure(manifest: Mapping[str, object]) -> ProprioCodec
     upper = action["position_upper_rad"]
     if not isinstance(lower, list) or not isinstance(upper, list) or len(lower) != codec.joint_count or len(upper) != codec.joint_count:
         raise PolicyPackageValidationError("invalid action position-limit width")
-    if any(float(high) <= float(low) for low, high in zip(lower, upper)):
+    if any(float(high) <= float(low) for low, high in zip(lower, upper, strict=False)):
         raise PolicyPackageValidationError("invalid action position limits")
 
     history = _mapping(manifest["history"], "history")

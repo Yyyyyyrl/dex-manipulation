@@ -13,19 +13,18 @@ import fcntl
 import hashlib
 import json
 import math
-from pathlib import Path
 import queue
 import sys
 import tempfile
 import threading
 import time
 import tkinter as tk
+from pathlib import Path
 from tkinter import ttk
 
 import can
-from safetensors.torch import load_file, save_file
 import torch
-
+from safetensors.torch import load_file, save_file
 
 ROOT = Path(__file__).resolve().parents[1]
 TESTS = ROOT / "tests"
@@ -33,9 +32,9 @@ if str(TESTS) not in sys.path:
     sys.path.insert(0, str(TESTS))
 
 from dex_contracts import (  # noqa: E402
+    PROTOCOL_VERSION,
     AcknowledgementLevel,
     MessageIdentity,
-    PROTOCOL_VERSION,
     ResourceId,
     SourceHealth,
     TeleopHandCandidate,
@@ -55,7 +54,6 @@ from dex_runtime.status import RuntimeStatus  # noqa: E402
 from dex_teleop_adapters import ManusSourceStatus  # noqa: E402
 from policy_package_factory import rewrite_manifest, write_test_package  # noqa: E402
 from test_deployment_preflight import _write_config  # noqa: E402
-
 
 CAN_ID = 0x28
 CONTROL_PERIOD_S = 0.1
@@ -687,7 +685,7 @@ class HilWindow:
         margin = 34
         slot = (width - 2 * margin) / len(FINGER_PLOT_JOINTS)
         for finger, (name, joint_index) in enumerate(
-            zip(FINGER_NAMES, FINGER_PLOT_JOINTS)
+            zip(FINGER_NAMES, FINGER_PLOT_JOINTS, strict=False)
         ):
             joint = self.gateway.mapper.calibration.joints[joint_index]
             value = state.semantic_position[joint_index]

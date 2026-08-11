@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import FrozenInstanceError, replace
 import json
+from dataclasses import FrozenInstanceError, replace
 
 import pytest
 
 from dex_contracts import (
-    MessageIdentity,
     PROTOCOL_VERSION,
+    MessageIdentity,
     ResourceId,
     SourceHealth,
     TimestampedSample,

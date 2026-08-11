@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
 import math
+from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping
 
 
 class DeploymentBindingError(ValueError):
@@ -199,7 +199,7 @@ class DeploymentBinding:
         return self.arm.mode
 
     @classmethod
-    def load(cls, path: str | Path) -> "DeploymentBinding":
+    def load(cls, path: str | Path) -> DeploymentBinding:
         source = Path(path).resolve()
         raw = json.loads(source.read_text(encoding="utf-8"))
         if not isinstance(raw, Mapping):
@@ -386,7 +386,7 @@ class DeploymentBinding:
             len(lower) != 16
             or len(upper) != 16
             or any(not math.isfinite(value) for value in (*lower, *upper))
-            or any(high <= low for low, high in zip(lower, upper))
+            or any(high <= low for low, high in zip(lower, upper, strict=False))
         ):
             raise DeploymentBindingError("safety needs 16 finite ordered hand position limits")
         safety = SafetyRuntimeBinding(

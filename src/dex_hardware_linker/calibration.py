@@ -7,13 +7,13 @@ the resulting frozen mapper for the lifetime of a control session.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
 import json
 import math
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping, Sequence
-
+from typing import Any
 
 _ASSET_ROOT = Path(__file__).resolve().parent / "assets"
 DEFAULT_SCHEMA_PATH = (
@@ -195,7 +195,7 @@ def load_linker_calibration(
     if not isinstance(entries, list) or len(entries) != len(schema.joints):
         raise ValueError("calibration mapping length does not match semantic schema")
     joints: list[JointCalibration] = []
-    for spec, entry in zip(schema.joints, entries):
+    for spec, entry in zip(schema.joints, entries, strict=False):
         if entry.get("name") != spec.name:
             raise ValueError(f"mapping order mismatch at {spec.name}")
         lower, upper = _number_pair(entry.get("soft_limit"), spec.name)
@@ -285,7 +285,7 @@ class LinkerMapper:
         cls,
         path: str | Path = DEFAULT_CALIBRATION_PATH,
         schema_path: str | Path = DEFAULT_SCHEMA_PATH,
-    ) -> "LinkerMapper":
+    ) -> LinkerMapper:
         return cls(load_linker_calibration(path, schema_path))
 
     @property
@@ -302,7 +302,7 @@ class LinkerMapper:
         arc = [0.0] * len(self.calibration.native_arc_min)
         clamped: list[float] = []
         saturated: list[str] = []
-        for value, joint in zip(incoming, joints):
+        for value, joint in zip(incoming, joints, strict=False):
             safe = min(max(value, joint.lower), joint.upper)
             if safe != value:
                 saturated.append(joint.name)
@@ -363,7 +363,7 @@ class LinkerMapper:
         inverse = self.inverse(command)
         error = tuple(
             observed - expected
-            for observed, expected in zip(inverse, preview.semantic_clamped)
+            for observed, expected in zip(inverse, preview.semantic_clamped, strict=False)
         )
         return PreparedCommand(preview, command, inverse, error)
 

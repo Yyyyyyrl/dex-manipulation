@@ -7,10 +7,10 @@ import numpy as np
 import pytest
 
 from tools.vr_hitbot_controller import (
-    HitbotOwner,
     OPENXR_LAYOUT,
-    OpenXRWristReceiver,
     SERVO_FALLBACK_S,
+    HitbotOwner,
+    OpenXRWristReceiver,
 )
 
 

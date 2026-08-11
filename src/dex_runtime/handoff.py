@@ -350,7 +350,7 @@ class HandoffSupervisor:
                 source.semantic_position,
                 destination.semantic_position,
                 self.safety.limits.position_lower_rad,
-                self.safety.limits.position_upper_rad,
+                self.safety.limits.position_upper_rad, strict=False,
             )
         )
         identity = replace(destination.identity, source_id="handoff-transition")

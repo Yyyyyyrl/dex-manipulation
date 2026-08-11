@@ -6,13 +6,13 @@ one immutable value per source and never wait for a browser or network client.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from enum import Enum
 import math
-from types import MappingProxyType
 import threading
 import time
-from typing import Callable, Mapping
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
+from enum import Enum
+from types import MappingProxyType
 
 
 class TelemetryHealth(str, Enum):

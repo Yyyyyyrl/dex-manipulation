@@ -5,8 +5,8 @@ import threading
 import time
 
 from dex_contracts import (
-    MessageIdentity,
     PROTOCOL_VERSION,
+    MessageIdentity,
     ResourceId,
     SourceHealth,
     TeleopHandCandidate,
@@ -149,7 +149,7 @@ def test_hand_only_application_runs_real_gateway_and_records_trace(tmp_path) -> 
     binding = preflight.binding
     midpoint = tuple(
         (lower + upper) * 0.5
-        for lower, upper in zip(CALIBRATION_LOWER, CALIBRATION_UPPER)
+        for lower, upper in zip(CALIBRATION_LOWER, CALIBRATION_UPPER, strict=False)
     )
     transport = FakeLinkerTransport(preflight.mapper.prepare(midpoint).native_range)
     gateway = LinkerGateway(
@@ -245,7 +245,7 @@ def test_virtual_manus_and_f12_complete_policy_cycle_through_application(tmp_pat
     binding = preflight.binding
     midpoint = tuple(
         (lower + upper) * 0.5
-        for lower, upper in zip(CALIBRATION_LOWER, CALIBRATION_UPPER)
+        for lower, upper in zip(CALIBRATION_LOWER, CALIBRATION_UPPER, strict=False)
     )
     transport = FakeLinkerTransport(preflight.mapper.prepare(midpoint).native_range)
     gateway = LinkerGateway(

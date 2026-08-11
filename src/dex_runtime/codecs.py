@@ -7,11 +7,10 @@ required to pass the same golden fixture.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Mapping, Sequence
 
 import torch
-
 
 IDENTITY_RADIANS = "identity-radians"
 AFFINE_TO_MINUS_ONE_ONE = "affine-limits-to-minus-one-one"
@@ -51,7 +50,7 @@ class ProprioCodecSpec:
                 raise ValueError("affine scaling requires lower and upper limits")
             if len(self.measured_lower_rad) != self.joint_count or len(self.measured_upper_rad) != self.joint_count:
                 raise ValueError("affine limit widths must match joint_count")
-            if any(upper <= lower for lower, upper in zip(self.measured_lower_rad, self.measured_upper_rad)):
+            if any(upper <= lower for lower, upper in zip(self.measured_lower_rad, self.measured_upper_rad, strict=False)):
                 raise ValueError("every affine upper limit must exceed its lower limit")
         else:
             raise ValueError(f"unsupported measured-position scaling {self.measured_position_scaling!r}")
@@ -72,7 +71,7 @@ class ProprioCodecSpec:
         }
 
     @classmethod
-    def from_dict(cls, value: Mapping[str, object]) -> "ProprioCodecSpec":
+    def from_dict(cls, value: Mapping[str, object]) -> ProprioCodecSpec:
         required = {
             "codec_id",
             "task_family",

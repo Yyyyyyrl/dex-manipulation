@@ -2,24 +2,23 @@
 
 from __future__ import annotations
 
+import math
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from enum import Enum
-import math
-from typing import Mapping, Sequence
 
 import torch
 import torch.nn as nn
 
 from dex_contracts import (
+    PROTOCOL_VERSION,
     MessageIdentity,
     PolicyHandCandidate,
-    PROTOCOL_VERSION,
     ResourceId,
 )
 
 from .codecs import ProprioCodec
 from .policy_package import ValidatedPolicyPackage
-
 
 _ACTIVATIONS: dict[str, type[nn.Module]] = {
     "elu": nn.ELU,
@@ -368,7 +367,7 @@ class PolicySession:
         target_values = tuple(
             min(max(float(value), lower), upper)
             for value, lower, upper in zip(
-                target[0].tolist(), self._position_lower, self._position_upper
+                target[0].tolist(), self._position_lower, self._position_upper, strict=False
             )
         )
         maximum = float(action.abs().max().item())

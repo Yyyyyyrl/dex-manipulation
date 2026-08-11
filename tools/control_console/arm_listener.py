@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from collections import deque
 import json
 import math
 import socket
 import threading
 import time
-from typing import Callable
-
+from collections import deque
+from collections.abc import Callable
 
 MAX_HEALTHY_CYCLE_LATENCY_MS = 200.0
 MAX_HEALTHY_SERVO_INTERVAL_MS = 150.0
@@ -215,7 +214,7 @@ class ArmTelemetryListener:
         while not self._stop.is_set():
             try:
                 data, address = self._sock.recvfrom(32768)
-            except socket.timeout:
+            except TimeoutError:
                 continue
             except OSError:
                 break

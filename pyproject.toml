@@ -31,6 +31,8 @@ camera = [
 dev = [
   "pytest==9.0.3",
   "import-linter==2.3",
+  "ruff==0.9.6",
+  "mypy==1.15.0",
   "fonttools==4.55.3",
   "brotli==1.1.0",
 ]
@@ -55,3 +57,77 @@ dex_hardware_linker = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
+# `tools` is a repository-local package, not an installed distribution, and the
+# tests import it. Without this the suite only passes under `python -m pytest`
+# (which happens to put the CWD on sys.path) and fails under the `pytest`
+# console script that CI invokes.
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py310"
+# The pre-existing code sits comfortably under 100 columns; 88 would reflow
+# roughly 350 otherwise-fine lines for no readability gain.
+line-length = 100
+src = ["src", "tools", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "RUF"]
+ignore = [
+  "E501",    # line length is the formatter's job
+  "RUF012",  # ClassVar annotations are noise on these frozen-dataclass modules
+  # Parts of the retargeting math are documented in Chinese, which uses
+  # full-width punctuation. These rules exist to catch homoglyph tricks in
+  # identifiers, not to police CJK prose.
+  "RUF001",
+  "RUF002",
+  "RUF003",
+  # `isinstance(x, (A, B))` is idiomatic here and the rule is deprecated
+  # upstream; rewriting 25 call sites buys nothing.
+  "UP038",
+  # False-positives on numpy: `positions[0] + (x, 0.0, 0.0)` is element-wise
+  # vector addition, and the suggested `(*base, x, 0.0, 0.0)` would silently
+  # build a 6-tuple instead. See tools/openxr_hand_bridge.py::_fake_pose.
+  "RUF005",
+  # itertools.pairwise() in one test assertion; not worth touching a test that
+  # is currently proving handoff blend continuity.
+  "RUF007",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# The console entrypoints support both `python tools/switch_web_demo.py` and
+# `python -m tools.switch_web_demo`, so a try/except import block necessarily
+# precedes the remaining module-level imports.
+"tools/switch_web_demo.py" = ["E402"]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+  "dex_contracts",
+  "dex_hardware_linker",
+  "dex_runtime",
+  "dex_teleop_adapters",
+  "tools",
+]
+
+[tool.mypy]
+python_version = "3.10"
+warn_redundant_casts = true
+warn_unused_ignores = true
+# Deliberately narrow for now: the contract and runtime packages are already
+# fully annotated frozen dataclasses, so they type-check clean and are worth
+# protecting. Widening to tools/ and the teleop adapters is follow-up work.
+files = ["src/dex_contracts", "src/dex_runtime"]
+
+[[tool.mypy.overrides]]
+module = [
+  "brotli.*",
+  "can.*",
+  "cv2.*",
+  "dex_retargeting.*",
+  "evdev.*",
+  "fontTools.*",
+  "pyrealsense2.*",
+  "rclpy.*",
+  "safetensors.*",
+  "xr.*",
+]
+ignore_missing_imports = true

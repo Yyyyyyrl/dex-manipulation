@@ -1,19 +1,19 @@
 from __future__ import annotations
-from dataclasses import replace
 
 import time
 import uuid
+from dataclasses import replace
 
 import pytest
 
 from dex_contracts import (
+    PROTOCOL_VERSION,
     AcknowledgementLevel,
     AuthorizedHandCommand,
     CommandMode,
     MessageIdentity,
     OwnerKind,
     OwnershipState,
-    PROTOCOL_VERSION,
     ResourceId,
 )
 from dex_hardware_linker import (

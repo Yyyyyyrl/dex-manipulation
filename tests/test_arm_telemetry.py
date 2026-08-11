@@ -6,9 +6,9 @@ from pathlib import Path
 import pytest
 
 from dex_runtime.telemetry import TelemetryHub
+from test_control_console import _Controller, _OpenXR
 from tools.control_console.arm_listener import ArmTelemetryListener
 from tools.control_console.telemetry import ConsoleTelemetryPump
-from test_control_console import _Controller, _OpenXR
 
 
 def _payload(sequence: int = 0, *, success: bool = True) -> dict[str, object]:

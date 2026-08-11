@@ -16,7 +16,6 @@ from policy_package_factory import (
     write_test_package,
 )
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 

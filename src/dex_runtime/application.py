@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime, timezone
 import queue
 import threading
 import time
-from typing import Any, Callable, Protocol
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from typing import Any, Protocol
 
 from dex_contracts import (
     AcknowledgementLevel,
@@ -29,7 +30,6 @@ from .observability import ControlTraceRecorder, EventLogger, RuntimeEvent
 from .operator_switch import EvdevF12SwitchSource, OperatorSwitchEvent, is_toggle_request
 from .policy_session import PolicySession
 from .preflight import PreflightResult
-from .real_arm import RealArmGateway
 from .readiness import (
     GatewayHealthProvider,
     HandStateFreshnessProvider,
@@ -37,6 +37,7 @@ from .readiness import (
     PolicyCompatibilityProvider,
     ReadinessAggregator,
 )
+from .real_arm import RealArmGateway
 from .safety import HandGatewayBinding, HandSafetyLimits, HandSafetySupervisor
 from .status import RuntimeStatus, TerminalStatusRenderer
 from .telemetry import ControlLoopTelemetry

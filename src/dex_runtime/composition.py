@@ -24,7 +24,7 @@ def build_hand_only_runtime(preflight: PreflightResult) -> HandOnlyRuntime:
             (lower + upper) * 0.5
             for lower, upper in zip(
                 binding.safety.position_lower_rad,
-                binding.safety.position_upper_rad,
+                binding.safety.position_upper_rad, strict=False,
             )
         )
         transport = FakeLinkerTransport(

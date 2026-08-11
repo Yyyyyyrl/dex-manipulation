@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from http.server import BaseHTTPRequestHandler, HTTPServer
-from pathlib import Path
 import json
 import re
 import subprocess
 import sys
 import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
 
 import pytest
-
 
 LAUNCHER = Path("tools/start_live_ui.sh")
 
@@ -18,7 +17,7 @@ def _snapshot_server(snapshot: dict) -> HTTPServer:
     body = json.dumps(snapshot).encode()
 
     class Handler(BaseHTTPRequestHandler):
-        def do_GET(self) -> None:  # noqa: N802 - http.server API
+        def do_GET(self) -> None:
             if self.path != "/api/snapshot":
                 self.send_response(404)
                 self.end_headers()

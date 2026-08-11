@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
 import uuid
+from dataclasses import dataclass
 
 from dex_contracts import (
+    PROTOCOL_VERSION,
     AuthorizedHandCommand,
     CommandMode,
     EffectiveHandTarget,
@@ -14,7 +15,6 @@ from dex_contracts import (
     HandState,
     MessageIdentity,
     OwnerKind,
-    PROTOCOL_VERSION,
     ResourceId,
 )
 
@@ -32,7 +32,7 @@ class HandSafetyLimits:
     def __post_init__(self) -> None:
         if not self.position_lower_rad or len(self.position_lower_rad) != len(self.position_upper_rad):
             raise ValueError("hand safety position limits are incomplete")
-        if any(upper <= lower for lower, upper in zip(self.position_lower_rad, self.position_upper_rad)):
+        if any(upper <= lower for lower, upper in zip(self.position_lower_rad, self.position_upper_rad, strict=False)):
             raise ValueError("hand safety upper limits must exceed lower limits")
         if any(
             value <= 0
@@ -133,7 +133,7 @@ class HandSafetySupervisor:
         if hand_state.state_quality != "fresh" or hand_state.hardware_faults or any(hand_state.missing_joint_mask):
             reasons.append("hand-state-unhealthy")
         for index, (value, lower, upper) in enumerate(
-            zip(target, self.limits.position_lower_rad, self.limits.position_upper_rad)
+            zip(target, self.limits.position_lower_rad, self.limits.position_upper_rad, strict=False)
         ):
             if value < lower or value > upper:
                 reasons.append(f"position-limit:{index}")
@@ -141,9 +141,9 @@ class HandSafetySupervisor:
             self.limits.maximum_delta_per_tick_rad,
             self.limits.maximum_target_rate_rad_s * control_period_ns / 1_000_000_000,
         )
-        if max(abs(value - previous) for value, previous in zip(target, effective)) > tick_limit:
+        if max(abs(value - previous) for value, previous in zip(target, effective, strict=False)) > tick_limit:
             reasons.append("target-delta-limit")
-        if max(abs(value - value_measured) for value, value_measured in zip(target, measured)) > self.limits.maximum_following_error_rad:
+        if max(abs(value - value_measured) for value, value_measured in zip(target, measured, strict=False)) > self.limits.maximum_following_error_rad:
             reasons.append("following-error-limit")
         return HandSafetyDecision(not reasons, tuple(reasons))
 

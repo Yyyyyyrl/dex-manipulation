@@ -14,16 +14,16 @@ It adds no external runtime dependencies or hardware command endpoints.
 from __future__ import annotations
 
 import argparse
-import fcntl
 import ctypes
+import fcntl
 import json
 import os
-from pathlib import Path
 import signal
 import subprocess
 import sys
 import threading
 import time
+from pathlib import Path
 
 
 def _die_with_parent() -> None:
@@ -68,7 +68,6 @@ from dex_runtime.handoff import HandoffState
 from dex_runtime.telemetry import TelemetryHub
 from dex_teleop_adapters import OPENXR_PARENT_IDS
 
-
 _STATE_COLORS = {
     HandoffState.RL_ACTIVE.value: "#c2410c",
     HandoffState.RL_SHADOW.value: "#1d4ed8",
@@ -102,7 +101,7 @@ def start_vr_bridge(
 
     if mode == "off":
         return None
-    log = open(log_path, "w")  # noqa: SIM115 - closed when the process is reaped
+    log = open(log_path, "w")
     command = [
         vr_python,
         str(_VR_BRIDGE),
@@ -192,7 +191,7 @@ class DemoController:
             self._outcome["result"] = self.runtime.run(
                 initial_input_timeout_s=self.initial_input_timeout_s
             )
-        except BaseException as exc:  # noqa: BLE001 - surfaced to the UI
+        except BaseException as exc:
             self._outcome["exception"] = exc
 
     def _run_alive(self) -> bool:
@@ -439,7 +438,7 @@ class DemoController:
             return []
         joints = self.gateway.mapper.calibration.joints
         fingers = []
-        for name, index in zip(FINGER_NAMES, FINGER_PLOT_JOINTS):
+        for name, index in zip(FINGER_NAMES, FINGER_PLOT_JOINTS, strict=False):
             joint = joints[index]
             value = state.semantic_position[index]
             fingers.append(
@@ -472,7 +471,7 @@ class DemoController:
         points = getattr(payload, "points_m", ())
         nodes = []
         if len(points) == len(OPENXR_PARENT_IDS):
-            for index, (point, parent) in enumerate(zip(points, OPENXR_PARENT_IDS)):
+            for index, (point, parent) in enumerate(zip(points, OPENXR_PARENT_IDS, strict=False)):
                 if len(point) != 3:
                     nodes = []
                     break

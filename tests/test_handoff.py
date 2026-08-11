@@ -1,16 +1,17 @@
 from __future__ import annotations
+
 from dataclasses import replace
 
 import pytest
 
 from dex_contracts import (
+    PROTOCOL_VERSION,
     AcknowledgementLevel,
     EffectiveHandTarget,
     HandState,
     MessageIdentity,
     OwnerKind,
     PolicyCompatibility,
-    PROTOCOL_VERSION,
     ReadinessResult,
     ReadinessSnapshot,
     ResourceId,
@@ -36,8 +37,7 @@ from policy_package_factory import (
     write_test_package,
 )
 
-
-MIDPOINT = tuple((lower + upper) * 0.5 for lower, upper in zip(CALIBRATION_LOWER, CALIBRATION_UPPER))
+MIDPOINT = tuple((lower + upper) * 0.5 for lower, upper in zip(CALIBRATION_LOWER, CALIBRATION_UPPER, strict=False))
 
 REQUIRED = (
     "operator-confirmation-v1",
@@ -320,5 +320,5 @@ def test_fake_arm_full_teleop_policy_handback_cycle_is_bumpless(tmp_path) -> Non
     assert session.status.state is PolicySessionState.DEACTIVATED
 
     targets = [command.semantic_position for command in hand_gateway.sent_commands]
-    for previous, current in zip(targets, targets[1:]):
-        assert max(abs(a - b) for a, b in zip(previous, current)) <= 0.2 + 1e-9
+    for previous, current in zip(targets, targets[1:], strict=False):
+        assert max(abs(a - b) for a, b in zip(previous, current, strict=False)) <= 0.2 + 1e-9
