@@ -1,9 +1,29 @@
-.venv/
-.vendor/
-.pytest_cache/
+# Python build and bytecode artifacts.
 __pycache__/
 *.py[cod]
 *.egg-info/
 build/
 dist/
+
+# Virtual environments. `.venv` is created by ./bootstrap.sh; `.venv-hitbot` is
+# the separate interpreter used by the Hitbot arm controller on the host.
+.venv/
+.venv-hitbot/
+
+# Third-party sources fetched by ./bootstrap.sh (pinned LinkerHand ROS SDK).
+# The patch that pins it lives in vendor/patches/ and IS tracked.
+.vendor/
+
+# Tool caches.
+.pytest_cache/
+.import_linter_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Runtime output: JSONL control traces, event logs, and captured HIL evidence.
 traces/
+.artifacts/
+log.txt
+
+# Editor / assistant local settings.
+.claude/
