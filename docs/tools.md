@@ -14,20 +14,19 @@ that device only — it does not substitute a fake control path.
 
 ## Which entry point should I use?
 
-There are three UIs, and the overlap is the most common source of confusion.
+Two, depending on whether you are developing or running a real session.
 
-| | `switch_web_demo.py` | `hil_switch_ui.py` | `start_live_ui.sh` |
-|---|---|---|---|
-| Interface | Browser, HTTP + SSE | Tkinter desktop window | Launches the browser console |
-| Status | **Current. Start here.** | Earlier commissioning tool | **The authorized live path** |
-| Hardware | Real hand, or none | Real hand | Real everything |
-| Operator input | Real OpenXR, or virtual | Virtual only | Real Quest 3S / WiVRn |
-| Use it when | Developing, demoing, verifying | Bench-testing a real hand with no VR | Running the real supervised session |
+| | `switch_web_demo.py` | `start_live_ui.sh` |
+|---|---|---|
+| Interface | Browser, HTTP + SSE | Launches the browser console |
+| Status | **Current. Start here.** | **The authorized live path** |
+| Hardware | Real hand, or none | Real everything |
+| Operator input | Real OpenXR, or virtual | Real Quest 3S / WiVRn |
+| Use it when | Developing, demoing, verifying | Running the real supervised session |
 
-All three drive the same `HandOnlyRuntime`; they differ in what they substitute
-and in how much they are allowed to do. `tools/control_console/` is the shared
-implementation the browser ones are built from — it is a library, not an entry
-point.
+Both drive the same `HandOnlyRuntime`; they differ in what they substitute and
+in how much they are allowed to do. `tools/control_console/` is the shared
+implementation they are built from — it is a library, not an entry point.
 
 For anything involving real hardware, [`operator-runbook.md`](operator-runbook.md)
 is the authority, not this file.
@@ -68,12 +67,6 @@ tools/start_live_ui.sh --dry-run   # check preconditions, start nothing
 
 `--enable-rl-switch` exists but is reserved for the explicitly authorized
 hardware-in-the-loop sequence.
-
-### `hil_switch_ui.py`
-Tkinter commissioning UI for a real hand with virtual operator input. Uses the
-production runtime and the pinned G20 CAN driver, replacing only the
-unavailable Manus and PCsensor devices with bounded virtual sources. Eagerly
-imports `python-can`, so it needs the `linker` extra.
 
 ### `vr_hitbot_controller.py`
 **The single Hitbot SDK owner.** Consumes the shared OpenXR wrist stream, does
@@ -150,12 +143,13 @@ safe to run during a live session to capture evidence.
 
 ## Notes for maintainers
 
-**Three UIs is one too many.** `hil_switch_ui.py` and `switch_web_demo.py`
-independently reproduce policy loading, retargeter construction, and operator
-switch handling. The intended direction is for the Tkinter UI to be retired once
-the browser console covers bench commissioning, leaving `control_console/` as
-the single implementation. Nothing depends on that happening; it is recorded so
-the duplication is not mistaken for a design.
+**Bench commissioning has no dedicated UI.** A Tkinter UI (`hil_switch_ui.py`)
+used to cover testing a real hand with no VR available, by substituting virtual
+operator input. It was removed as duplicated surface — it independently
+reproduced policy loading, retargeter construction, and operator switch
+handling. `switch_web_demo.py` covers the same ground, but if you need that
+workflow back, the virtual-source approach is worth recovering from git history
+rather than rewriting.
 
 **`.venv-hitbot` is load-bearing and undocumented.** `start_live_ui.sh` hard-codes
 `.venv-hitbot/bin/python` as the Hitbot interpreter and fails if it is missing.
