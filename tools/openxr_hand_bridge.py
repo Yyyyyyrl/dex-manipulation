@@ -23,20 +23,60 @@ import numpy as np
 SCHEMA_VERSION = 1
 LAYOUT_ID = "openxr-hand-26-v1"
 JOINT_NAMES = (
-    "palm", "wrist",
-    "thumb_metacarpal", "thumb_proximal", "thumb_distal", "thumb_tip",
-    "index_metacarpal", "index_proximal", "index_intermediate", "index_distal", "index_tip",
-    "middle_metacarpal", "middle_proximal", "middle_intermediate", "middle_distal", "middle_tip",
-    "ring_metacarpal", "ring_proximal", "ring_intermediate", "ring_distal", "ring_tip",
-    "little_metacarpal", "little_proximal", "little_intermediate", "little_distal", "little_tip",
+    "palm",
+    "wrist",
+    "thumb_metacarpal",
+    "thumb_proximal",
+    "thumb_distal",
+    "thumb_tip",
+    "index_metacarpal",
+    "index_proximal",
+    "index_intermediate",
+    "index_distal",
+    "index_tip",
+    "middle_metacarpal",
+    "middle_proximal",
+    "middle_intermediate",
+    "middle_distal",
+    "middle_tip",
+    "ring_metacarpal",
+    "ring_proximal",
+    "ring_intermediate",
+    "ring_distal",
+    "ring_tip",
+    "little_metacarpal",
+    "little_proximal",
+    "little_intermediate",
+    "little_distal",
+    "little_tip",
 )
 PARENT_IDS = (
-    1, -1,
-    1, 2, 3, 4,
-    1, 6, 7, 8, 9,
-    1, 11, 12, 13, 14,
-    1, 16, 17, 18, 19,
-    1, 21, 22, 23, 24,
+    1,
+    -1,
+    1,
+    2,
+    3,
+    4,
+    1,
+    6,
+    7,
+    8,
+    9,
+    1,
+    11,
+    12,
+    13,
+    14,
+    1,
+    16,
+    17,
+    18,
+    19,
+    1,
+    21,
+    22,
+    23,
+    24,
 )
 
 
@@ -143,7 +183,9 @@ def _frame_from_hand(data: dict[str, object], sequence: int, focused: bool) -> d
     radii = np.asarray(joints["radius"], dtype=float)
     valid = np.asarray(joints["valid"], dtype=bool)
     pinch = data.get("pinch")
-    pinch_m = float(pinch) if isinstance(pinch, (int, float)) and math.isfinite(float(pinch)) else None
+    pinch_m = (
+        float(pinch) if isinstance(pinch, (int, float)) and math.isfinite(float(pinch)) else None
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "source": "dex-teleop-openxr-hand",

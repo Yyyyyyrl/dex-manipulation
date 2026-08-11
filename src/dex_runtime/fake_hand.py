@@ -77,7 +77,10 @@ class FakeHandGateway:
             raise ValueError("fake gateway command session mismatch")
         if command.identity.control_epoch != ownership.control_epoch:
             raise ValueError("fake gateway command epoch mismatch")
-        if command.owner is not ownership.owner or command.command_mode is not ownership.command_mode:
+        if (
+            command.owner is not ownership.owner
+            or command.command_mode is not ownership.command_mode
+        ):
             raise ValueError("fake gateway command owner or mode mismatch")
         if command.deadline_ns <= now_ns:
             raise ValueError("fake gateway command deadline expired")

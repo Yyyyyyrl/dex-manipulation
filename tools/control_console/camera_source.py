@@ -201,10 +201,40 @@ class SyntheticD435Source(_LatestCameraSource):
                 cy = int(height * 0.52 + 35 * math.cos(phase * 0.5))
                 cv2.rectangle(image, (cx - 145, cy - 80), (cx + 145, cy + 80), (50, 74, 91), -1)
                 cv2.circle(image, (cx, cy), 58, (43, 125, 164), -1)
-                cv2.line(image, (width // 2 - 22, height // 2), (width // 2 + 22, height // 2), (86, 212, 255), 2)
-                cv2.line(image, (width // 2, height // 2 - 22), (width // 2, height // 2 + 22), (86, 212, 255), 2)
-                cv2.putText(image, "SYNTHETIC D435 PREVIEW", (34, 48), cv2.FONT_HERSHEY_SIMPLEX, 0.82, (86, 212, 255), 2, cv2.LINE_AA)
-                cv2.putText(image, "NO PHYSICAL CAMERA", (34, 79), cv2.FONT_HERSHEY_SIMPLEX, 0.56, (247, 185, 85), 1, cv2.LINE_AA)
+                cv2.line(
+                    image,
+                    (width // 2 - 22, height // 2),
+                    (width // 2 + 22, height // 2),
+                    (86, 212, 255),
+                    2,
+                )
+                cv2.line(
+                    image,
+                    (width // 2, height // 2 - 22),
+                    (width // 2, height // 2 + 22),
+                    (86, 212, 255),
+                    2,
+                )
+                cv2.putText(
+                    image,
+                    "SYNTHETIC D435 PREVIEW",
+                    (34, 48),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.82,
+                    (86, 212, 255),
+                    2,
+                    cv2.LINE_AA,
+                )
+                cv2.putText(
+                    image,
+                    "NO PHYSICAL CAMERA",
+                    (34, 79),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.56,
+                    (247, 185, 85),
+                    1,
+                    cv2.LINE_AA,
+                )
 
                 depth_width, depth_height = 480, 270
                 xx = np.linspace(0, 255, depth_width, dtype=np.uint8)
@@ -212,9 +242,20 @@ class SyntheticD435Source(_LatestCameraSource):
                 depth_gray = np.roll(depth_gray, int(phase * 18) % depth_width, axis=1)
                 depth = cv2.applyColorMap(depth_gray, cv2.COLORMAP_TURBO)
                 cv2.circle(depth, (int(cx / 2), int(cy / 2)), 44, (255, 210, 38), -1)
-                cv2.putText(depth, "DEPTH / SYNTHETIC", (14, 27), cv2.FONT_HERSHEY_SIMPLEX, 0.52, (255, 255, 255), 1, cv2.LINE_AA)
+                cv2.putText(
+                    depth,
+                    "DEPTH / SYNTHETIC",
+                    (14, 27),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.52,
+                    (255, 255, 255),
+                    1,
+                    cv2.LINE_AA,
+                )
                 rgb_ok, rgb_encoded = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 88])
-                depth_ok, depth_encoded = cv2.imencode(".jpg", depth, [cv2.IMWRITE_JPEG_QUALITY, 84])
+                depth_ok, depth_encoded = cv2.imencode(
+                    ".jpg", depth, [cv2.IMWRITE_JPEG_QUALITY, 84]
+                )
                 if not rgb_ok or not depth_ok:
                     raise RuntimeError("OpenCV failed to encode synthetic camera frame")
                 self._publish(

@@ -73,9 +73,10 @@ class OperatorConfirmationProvider:
         now_ns: int,
         validity_ns: int,
     ) -> TaskReadinessEvidence:
-        if not all(
-            (operator_id, control_session_id, policy_package_id, displayed_evidence_digest)
-        ) or validity_ns <= 0:
+        if (
+            not all((operator_id, control_session_id, policy_package_id, displayed_evidence_digest))
+            or validity_ns <= 0
+        ):
             raise ValueError("operator confirmation identity and positive validity are required")
         self._current = TaskReadinessEvidence(
             provider_id=self.provider_id,

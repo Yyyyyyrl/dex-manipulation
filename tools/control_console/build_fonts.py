@@ -11,15 +11,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 OUTPUT = HERE / "assets" / "fonts"
-UNICODES = (
-    "U+0000-00FF,"
-    "U+2000-206F,"
-    "U+2100-214F,"
-    "U+2190-21FF,"
-    "U+2200-22FF,"
-    "U+25A0-25FF,"
-    "U+2600-26FF"
-)
+UNICODES = "U+0000-00FF,U+2000-206F,U+2100-214F,U+2190-21FF,U+2200-22FF,U+25A0-25FF,U+2600-26FF"
 SOURCES = {
     "NotoSans-Regular.ttf": (
         "ui-regular.woff2",
@@ -95,4 +87,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

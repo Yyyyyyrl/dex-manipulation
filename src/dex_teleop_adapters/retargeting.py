@@ -111,7 +111,9 @@ class ManusRetargeter:
             raise ValueError(
                 f"retargeter output shape {qpos.shape} does not match joint-name count"
             )
-        by_name = dict(zip(self._retarget_joint_names, (float(value) for value in qpos), strict=False))
+        by_name = dict(
+            zip(self._retarget_joint_names, (float(value) for value in qpos), strict=False)
+        )
         semantic = [by_name[name] for name in self.profile.semantic_joint_names]
         thumb_index = self.profile.semantic_joint_names.index("thumb_cmc_roll")
         semantic[thumb_index] += self.profile.thumb_cmc_roll_bias_rad

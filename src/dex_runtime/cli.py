@@ -45,8 +45,7 @@ def _confirm_when_connected(application) -> None:
     try:
         operator_id = input("Operator ID: ").strip()
         token = input(
-            f"Type CONFIRM to arm {descriptor.display_name} "
-            f"({descriptor.package_id}): "
+            f"Type CONFIRM to arm {descriptor.display_name} ({descriptor.package_id}): "
         ).strip()
     except EOFError:
         return
@@ -82,8 +81,7 @@ def main(argv: list[str] | None = None) -> int:
             daemon=True,
         )
         previous_handlers = {
-            signum: signal.getsignal(signum)
-            for signum in (signal.SIGINT, signal.SIGTERM)
+            signum: signal.getsignal(signum) for signum in (signal.SIGINT, signal.SIGTERM)
         }
         for signum in previous_handlers:
             signal.signal(signum, lambda *_args: application.request_stop())

@@ -210,10 +210,7 @@ def test_hand_only_application_runs_real_gateway_and_records_trace(tmp_path) -> 
         == frame.gateway_acknowledgement.effective_target.command_id
         == frame.effective_target.command_id
     )
-    assert (
-        frame.hand_state.identity.sequence
-        == payload["hand_state"]["identity"]["sequence"]
-    )
+    assert frame.hand_state.identity.sequence == payload["hand_state"]["identity"]["sequence"]
 
     from tools.switch_web_demo import DemoController
 
@@ -338,9 +335,7 @@ def test_virtual_manus_and_f12_complete_policy_cycle_through_application(tmp_pat
         "activation-requested",
         "handback-requested",
     ]
-    transition_states = [
-        event["state"] for event in events if event["event_type"] == "transition"
-    ]
+    transition_states = [event["state"] for event in events if event["event_type"] == "transition"]
     for state in (
         "ARM_HOLD_PREPARE",
         "ARM_HOLD_VERIFY",

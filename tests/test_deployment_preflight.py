@@ -46,12 +46,8 @@ def _write_config(tmp_path: Path, package: Path) -> Path:
         },
         "teleop": {
             "repository_root": str(ROOT),
-            "profile_path": str(
-                ROOT / "configs/teleop/linker_g20_left_manus_dexpilot_v1.json"
-            ),
-            "retargeting_model_directory": str(
-                ROOT / "src/dex_hardware_linker/assets/model"
-            ),
+            "profile_path": str(ROOT / "configs/teleop/linker_g20_left_manus_dexpilot_v1.json"),
+            "retargeting_model_directory": str(ROOT / "src/dex_hardware_linker/assets/model"),
             "manus": {
                 "source_id": "manus-left",
                 "topic": "manus_glove_0",
@@ -182,6 +178,7 @@ def test_cli_preflight_and_package_trust_are_explicit(tmp_path, capsys) -> None:
     assert "linker-g20-left-hand-only-test-v1" in output
     assert "F12@" in output
 
+
 def test_preflight_rejects_rate_mismatch_before_hardware_access(tmp_path) -> None:
     package = write_test_package(tmp_path / "store" / "policy")
     config = _write_config(tmp_path, package)
@@ -196,6 +193,7 @@ def test_preflight_rejects_rate_mismatch_before_hardware_access(tmp_path) -> Non
     config.write_text(json.dumps(raw))
     with pytest.raises(ValueError, match="gateway state rate"):
         preflight_deployment(str(config))
+
 
 def test_binding_rejects_nonfinite_duplicate_and_disabled_identity(tmp_path) -> None:
     package = write_test_package(tmp_path / "store" / "policy")

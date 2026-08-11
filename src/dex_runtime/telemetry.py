@@ -52,13 +52,16 @@ class ControlLoopTelemetry:
     def __post_init__(self) -> None:
         if self.tick < 0:
             raise ValueError("control telemetry tick must be non-negative")
-        if min(
-            self.actual_time_ns,
-            self.scheduled_time_ns,
-            self.lateness_ns,
-            self.control_period_ns,
-            self.control_epoch,
-        ) < 0:
+        if (
+            min(
+                self.actual_time_ns,
+                self.scheduled_time_ns,
+                self.lateness_ns,
+                self.control_period_ns,
+                self.control_epoch,
+            )
+            < 0
+        ):
             raise ValueError("control telemetry time and epoch values must be non-negative")
         if self.control_period_ns == 0:
             raise ValueError("control telemetry period must be positive")
@@ -205,7 +208,6 @@ class TelemetryHub:
             "revision": revision,
             "server_monotonic_ns": now_ns,
             "sources": {
-                source: envelope.as_dict(now_ns)
-                for source, envelope in sorted(latest.items())
+                source: envelope.as_dict(now_ns) for source, envelope in sorted(latest.items())
             },
         }

@@ -14,9 +14,9 @@ from typing import Any
 def _digest(payload: Mapping[str, Any]) -> str:
     body = dict(payload)
     body.pop("profile_digest", None)
-    encoded = json.dumps(
-        body, sort_keys=True, separators=(",", ":"), ensure_ascii=False
-    ).encode("utf-8")
+    encoded = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode(
+        "utf-8"
+    )
     return hashlib.sha256(encoded).hexdigest()
 
 

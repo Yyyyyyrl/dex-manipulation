@@ -103,7 +103,7 @@ def test_live_snapshot_requires_real_modes_and_exact_correlations() -> None:
 
 def test_hil_observer_source_has_no_action_or_hardware_path() -> None:
     source = Path("tools/control_console/hil_observe.py").read_text()
-    assert "method=\"GET\"" in source
+    assert 'method="GET"' in source
     assert "do_POST" not in source
     assert "HitBotInterface" not in source
     assert "HitbotSixAxiscall" not in source

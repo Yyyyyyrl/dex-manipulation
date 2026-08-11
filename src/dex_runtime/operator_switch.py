@@ -101,9 +101,7 @@ class EvdevF12SwitchSource:
     def ingest_key_value(self, key_name: str, value: int) -> OperatorSwitchEvent | None:
         if key_name != "KEY_F12" or value not in (0, 1):
             return None
-        event = self._debouncer.ingest(
-            SwitchEdge.PRESS if value == 1 else SwitchEdge.RELEASE
-        )
+        event = self._debouncer.ingest(SwitchEdge.PRESS if value == 1 else SwitchEdge.RELEASE)
         callback = self._callback
         if event is not None and callback is not None:
             callback(event)

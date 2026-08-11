@@ -184,9 +184,7 @@ class UdpOpenXRSource:
                     self._number(joint.get("qz"), f"joint-{joint_id}-qz"),
                     self._number(joint.get("qw"), f"joint-{joint_id}-qw"),
                 )
-                radii[joint_id] = self._number(
-                    joint.get("radius_m"), f"joint-{joint_id}-radius"
-                )
+                radii[joint_id] = self._number(joint.get("radius_m"), f"joint-{joint_id}-radius")
             if any(value is None for value in positions + orientations + radii):
                 raise ValueError("joint-id-set-mismatch")
             pinch = payload.get("pinch_m")
@@ -348,9 +346,7 @@ class UdpOpenXRSource:
             }
             for index, point in enumerate(keypoints.points_m)
         ]
-        rate_hz = (
-            1_000_000_000 / (sum(intervals) / len(intervals)) if intervals else 0.0
-        )
+        rate_hz = 1_000_000_000 / (sum(intervals) / len(intervals)) if intervals else 0.0
         wrist = keypoints.points_m[1]
         wrist_orientation = keypoints.orientations_xyzw[1]
         return {

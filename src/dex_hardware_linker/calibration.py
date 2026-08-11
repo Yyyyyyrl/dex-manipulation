@@ -16,12 +16,8 @@ from pathlib import Path
 from typing import Any
 
 _ASSET_ROOT = Path(__file__).resolve().parent / "assets"
-DEFAULT_SCHEMA_PATH = (
-    _ASSET_ROOT / "calibrations" / "linker_g20_left_semantic_schema_v1.json"
-)
-DEFAULT_CALIBRATION_PATH = (
-    _ASSET_ROOT / "calibrations" / "linker_g20_left_lht20_010_415_v1.json"
-)
+DEFAULT_SCHEMA_PATH = _ASSET_ROOT / "calibrations" / "linker_g20_left_semantic_schema_v1.json"
+DEFAULT_CALIBRATION_PATH = _ASSET_ROOT / "calibrations" / "linker_g20_left_lht20_010_415_v1.json"
 
 
 def canonical_json_digest(payload: Mapping[str, Any], excluded_field: str) -> str:
@@ -31,9 +27,9 @@ def canonical_json_digest(payload: Mapping[str, Any], excluded_field: str) -> st
     if excluded_field not in body:
         raise ValueError(f"missing digest field {excluded_field!r}")
     body.pop(excluded_field)
-    encoded = json.dumps(
-        body, sort_keys=True, separators=(",", ":"), ensure_ascii=False
-    ).encode("utf-8")
+    encoded = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode(
+        "utf-8"
+    )
     return hashlib.sha256(encoded).hexdigest()
 
 
@@ -334,7 +330,11 @@ class LinkerMapper:
                 raise ValueError(f"native arc slot {slot} has no active range")
             value = min(max(value, lo), hi)
             fraction = (value - lo) / (hi - lo)
-            native = 255.0 * (1.0 - fraction) if self.calibration.native_direction[slot] == -1 else 255.0 * fraction
+            native = (
+                255.0 * (1.0 - fraction)
+                if self.calibration.native_direction[slot] == -1
+                else 255.0 * fraction
+            )
             command[slot] = int(round(min(max(native, 0.0), 255.0)))
         return tuple(command)
 

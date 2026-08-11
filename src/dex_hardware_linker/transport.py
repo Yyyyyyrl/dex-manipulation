@@ -13,9 +13,7 @@ from typing import Protocol
 
 from dex_contracts import AcknowledgementLevel
 
-PINNED_G20_DRIVER_SHA256 = (
-    "513be964dee481773ad4d346559e59912b3b70c79c920528783648631f9e10b9"
-)
+PINNED_G20_DRIVER_SHA256 = "513be964dee481773ad4d346559e59912b3b70c79c920528783648631f9e10b9"
 
 
 @dataclass(frozen=True)

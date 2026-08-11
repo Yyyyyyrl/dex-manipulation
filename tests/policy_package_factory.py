@@ -18,8 +18,42 @@ CALIBRATION_ID = "linker-g20-left-lht20-010-415-v1"
 CALIBRATION_DIGEST = "1e20d989a14aa9fe127e78680decb9bb29679858e223c41ad28ae67a598d51df"
 SCHEMA_ID = "linker-g20-left-semantic-16-v1"
 SCHEMA_DIGEST = "ce53ccafeb70a7bd9ba203576f7e54f330e106c0676ef90f8262d2a9ffa34ba7"
-CALIBRATION_LOWER = (-0.17, 0.0, 0.0, -0.17, 0.0, 0.0, -0.17, 0.0, 0.0, -0.17, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-CALIBRATION_UPPER = (0.17, 1.4, 1.57, 0.17, 1.4, 1.57, 0.17, 1.4, 1.57, 0.17, 1.4, 1.57, 1.4, 1.22, 0.79, 1.05)
+CALIBRATION_LOWER = (
+    -0.17,
+    0.0,
+    0.0,
+    -0.17,
+    0.0,
+    0.0,
+    -0.17,
+    0.0,
+    0.0,
+    -0.17,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+)
+CALIBRATION_UPPER = (
+    0.17,
+    1.4,
+    1.57,
+    0.17,
+    1.4,
+    1.57,
+    0.17,
+    1.4,
+    1.57,
+    0.17,
+    1.4,
+    1.57,
+    1.4,
+    1.22,
+    0.79,
+    1.05,
+)
 
 
 def _file_digest(path: Path) -> str:
@@ -67,8 +101,14 @@ def write_test_package(root: Path, *, free_object: bool = False) -> Path:
     adapter = RuntimeAdapter(codec.frame_dim, codec.history_length, 8)
     actor_path = root / "actor.safetensors"
     adapter_path = root / "adapter.safetensors"
-    save_file({key: value.detach().contiguous() for key, value in actor.state_dict().items()}, str(actor_path))
-    save_file({key: value.detach().contiguous() for key, value in adapter.state_dict().items()}, str(adapter_path))
+    save_file(
+        {key: value.detach().contiguous() for key, value in actor.state_dict().items()},
+        str(actor_path),
+    )
+    save_file(
+        {key: value.detach().contiguous() for key, value in adapter.state_dict().items()},
+        str(adapter_path),
+    )
     manifest = {
         "package_format": "dex-policy-package",
         "package_format_version": 1,

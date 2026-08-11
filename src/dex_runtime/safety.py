@@ -30,9 +30,14 @@ class HandSafetyLimits:
     command_deadline_ns: int
 
     def __post_init__(self) -> None:
-        if not self.position_lower_rad or len(self.position_lower_rad) != len(self.position_upper_rad):
+        if not self.position_lower_rad or len(self.position_lower_rad) != len(
+            self.position_upper_rad
+        ):
             raise ValueError("hand safety position limits are incomplete")
-        if any(upper <= lower for lower, upper in zip(self.position_lower_rad, self.position_upper_rad, strict=False)):
+        if any(
+            upper <= lower
+            for lower, upper in zip(self.position_lower_rad, self.position_upper_rad, strict=False)
+        ):
             raise ValueError("hand safety upper limits must exceed lower limits")
         if any(
             value <= 0
@@ -123,17 +128,20 @@ class HandSafetySupervisor:
         # bounded intra-period arrival skew, but reject genuinely future data.
         future_skew_ns = candidate.generated_time_ns - now_ns
         candidate_validation_ns = max(now_ns, candidate.generated_time_ns)
-        if (
-            future_skew_ns > control_period_ns
-            or not candidate.valid_at(candidate_validation_ns)
-        ):
+        if future_skew_ns > control_period_ns or not candidate.valid_at(candidate_validation_ns):
             reasons.append("candidate-expired")
         if now_ns - hand_state.acquisition_time_ns > self.limits.maximum_state_age_ns:
             reasons.append("hand-state-stale")
-        if hand_state.state_quality != "fresh" or hand_state.hardware_faults or any(hand_state.missing_joint_mask):
+        if (
+            hand_state.state_quality != "fresh"
+            or hand_state.hardware_faults
+            or any(hand_state.missing_joint_mask)
+        ):
             reasons.append("hand-state-unhealthy")
         for index, (value, lower, upper) in enumerate(
-            zip(target, self.limits.position_lower_rad, self.limits.position_upper_rad, strict=False)
+            zip(
+                target, self.limits.position_lower_rad, self.limits.position_upper_rad, strict=False
+            )
         ):
             if value < lower or value > upper:
                 reasons.append(f"position-limit:{index}")
@@ -141,9 +149,18 @@ class HandSafetySupervisor:
             self.limits.maximum_delta_per_tick_rad,
             self.limits.maximum_target_rate_rad_s * control_period_ns / 1_000_000_000,
         )
-        if max(abs(value - previous) for value, previous in zip(target, effective, strict=False)) > tick_limit:
+        if (
+            max(abs(value - previous) for value, previous in zip(target, effective, strict=False))
+            > tick_limit
+        ):
             reasons.append("target-delta-limit")
-        if max(abs(value - value_measured) for value, value_measured in zip(target, measured, strict=False)) > self.limits.maximum_following_error_rad:
+        if (
+            max(
+                abs(value - value_measured)
+                for value, value_measured in zip(target, measured, strict=False)
+            )
+            > self.limits.maximum_following_error_rad
+        ):
             reasons.append("following-error-limit")
         return HandSafetyDecision(not reasons, tuple(reasons))
 

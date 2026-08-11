@@ -114,15 +114,11 @@ def choose_policy_action(
     return tuple(action)
 
 
-def write_biased_policy(
-    directory: Path, action: tuple[float, ...]
-) -> Path:
+def write_biased_policy(directory: Path, action: tuple[float, ...]) -> Path:
     package = write_test_package(directory)
     actor_path = package / "actor.safetensors"
     actor_state = load_file(str(actor_path))
-    actor_state = {
-        name: torch.zeros_like(value) for name, value in actor_state.items()
-    }
+    actor_state = {name: torch.zeros_like(value) for name, value in actor_state.items()}
     actor_state["mu.bias"] = torch.tensor(
         action,
         dtype=actor_state["mu.bias"].dtype,
@@ -130,9 +126,7 @@ def write_biased_policy(
     save_file(actor_state, str(actor_path))
     manifest = json.loads((package / "manifest.json").read_text())
     manifest["display_name"] = "HIL bounded visible switch policy"
-    manifest["weights"]["actor"]["sha256"] = hashlib.sha256(
-        actor_path.read_bytes()
-    ).hexdigest()
+    manifest["weights"]["actor"]["sha256"] = hashlib.sha256(actor_path.read_bytes()).hexdigest()
     rewrite_manifest(package, manifest)
     return package
 
@@ -253,9 +247,7 @@ class VisibleWaveRetargeter:
         target = list(self.base)
         for offset, index in enumerate(TELEOP_JOINTS):
             joint = self.mapper.calibration.joints[index]
-            value = self.base[index] + self.amplitude_rad * math.sin(
-                phase + offset * math.pi / 2.0
-            )
+            value = self.base[index] + self.amplitude_rad * math.sin(phase + offset * math.pi / 2.0)
             target[index] = min(max(value, joint.lower), joint.upper)
         candidate = TeleopHandCandidate(
             identity=MessageIdentity(
@@ -453,9 +445,7 @@ class HilWindow:
 
         outer = ttk.Frame(root, padding=18)
         outer.pack(fill="both", expand=True)
-        ttk.Label(outer, text="LinkerHand G20 实机控制切换", style="Title.TLabel").pack(
-            anchor="w"
-        )
+        ttk.Label(outer, text="LinkerHand G20 实机控制切换", style="Title.TLabel").pack(anchor="w")
         ttk.Label(
             outer,
             text="F12：Teleop ↔ RL   |   Esc：安全停止",
@@ -529,9 +519,7 @@ class HilWindow:
             foreground="#8fa3b8",
         ).pack(anchor="w", pady=(14, 0))
         policy_parts = [
-            f"{index}:{value:+.2f}"
-            for index, value in enumerate(policy_action)
-            if value
+            f"{index}:{value:+.2f}" for index, value in enumerate(policy_action) if value
         ]
         ttk.Label(
             outer,
@@ -642,9 +630,7 @@ class HilWindow:
             else f"{status.history_count}/{status.history_required}"
         )
         self.values["history"].configure(text=history)
-        self.values["ready"].configure(
-            text="READY" if status.readiness_ready else "NOT READY"
-        )
+        self.values["ready"].configure(text="READY" if status.readiness_ready else "NOT READY")
         self.f12_button.configure(
             state="normal" if self.switchable() and not self.pending_stop else "disabled"
         )
@@ -698,8 +684,7 @@ class HilWindow:
             canvas.create_rectangle(x0, y0, x1, y1, outline="#64748b", width=2)
             color = (
                 "#f97316"
-                if self.status is not None
-                and self.status.state == HandoffState.RL_ACTIVE.value
+                if self.status is not None and self.status.state == HandoffState.RL_ACTIVE.value
                 else "#3b82f6"
             )
             canvas.create_rectangle(x0 + 2, fill_y, x1 - 2, y1 - 2, fill=color, width=0)
@@ -723,16 +708,19 @@ class HilWindow:
         if not self.confirmed and self.runtime.wait_until_connected(0.0):
             self.runtime.confirm_operator("hil-ui-operator")
             self.confirmed = True
-            self.message.configure(
-                text="已连接并确认。等待 history 30/30 后按 F12 进入 RL。"
-            )
+            self.message.configure(text="已连接并确认。等待 history 30/30 后按 F12 进入 RL。")
         self.update_status()
         self.update_timeout()
         self.draw_hand()
 
-        if self.pending_stop and self.status is not None and self.status.state in (
-            HandoffState.TELEOP_ACTIVE.value,
-            HandoffState.RL_SHADOW.value,
+        if (
+            self.pending_stop
+            and self.status is not None
+            and self.status.state
+            in (
+                HandoffState.TELEOP_ACTIVE.value,
+                HandoffState.RL_SHADOW.value,
+            )
         ):
             self.runtime.request_stop()
 

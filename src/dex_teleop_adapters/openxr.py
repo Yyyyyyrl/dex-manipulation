@@ -65,22 +65,42 @@ OPENXR_JOINT_NAMES = (
     "little_tip",
 )
 OPENXR_PARENT_IDS = (
-    1, -1,
-    1, 2, 3, 4,
-    1, 6, 7, 8, 9,
-    1, 11, 12, 13, 14,
-    1, 16, 17, 18, 19,
-    1, 21, 22, 23, 24,
+    1,
+    -1,
+    1,
+    2,
+    3,
+    4,
+    1,
+    6,
+    7,
+    8,
+    9,
+    1,
+    11,
+    12,
+    13,
+    14,
+    1,
+    16,
+    17,
+    18,
+    19,
+    1,
+    21,
+    22,
+    23,
+    24,
 )
 
 # OpenXR 26 layout -> the MediaPipe/MANO 21 layout expected by DexPilot.
 OPENXR_TO_MANO = {
-    1: 0,    # wrist
-    4: 3,    # thumb distal
-    5: 4,    # thumb tip
-    7: 5,    # index proximal / MCP
-    10: 8,   # index tip
-    12: 9,   # middle proximal / MCP
+    1: 0,  # wrist
+    4: 3,  # thumb distal
+    5: 4,  # thumb tip
+    7: 5,  # index proximal / MCP
+    10: 8,  # index tip
+    12: 9,  # middle proximal / MCP
     15: 12,  # middle tip
     20: 16,  # ring tip
     25: 20,  # little tip
@@ -128,9 +148,7 @@ def openxr_to_joint_pos(points_m: np.ndarray, hand_type: str = "left") -> np.nda
     for openxr_index, mano_index in OPENXR_TO_MANO.items():
         keypoint[mano_index] = points[openxr_index]
     keypoint -= keypoint[0:1, :]
-    operator_to_mano = (
-        OPERATOR2MANO_LEFT if hand_type == "left" else OPERATOR2MANO_RIGHT
-    )
+    operator_to_mano = OPERATOR2MANO_LEFT if hand_type == "left" else OPERATOR2MANO_RIGHT
     wrist_rotation = estimate_frame_from_hand_points(keypoint)
     return keypoint @ wrist_rotation @ operator_to_mano
 
@@ -225,7 +243,9 @@ class OpenXRRetargeter:
             raise ValueError(
                 f"retargeter output shape {qpos.shape} does not match joint-name count"
             )
-        by_name = dict(zip(self._retarget_joint_names, (float(value) for value in qpos), strict=False))
+        by_name = dict(
+            zip(self._retarget_joint_names, (float(value) for value in qpos), strict=False)
+        )
         semantic = [by_name[name] for name in self.profile.semantic_joint_names]
         thumb_index = self.profile.semantic_joint_names.index("thumb_cmc_roll")
         semantic[thumb_index] += self.profile.thumb_cmc_roll_bias_rad

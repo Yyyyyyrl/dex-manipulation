@@ -23,9 +23,7 @@ def _exact(value: Mapping[str, object], fields: set[str], label: str) -> None:
     missing = sorted(fields - set(value))
     extra = sorted(set(value) - fields)
     if missing or extra:
-        raise DeploymentBindingError(
-            f"invalid {label} fields; missing={missing}, extra={extra}"
-        )
+        raise DeploymentBindingError(f"invalid {label} fields; missing={missing}, extra={extra}")
 
 
 def _text(value: object, label: str) -> str:
@@ -315,8 +313,14 @@ class DeploymentBinding:
                 raise DeploymentBindingError("Linker speed and torque values must be integers")
             speed = tuple(speed_raw)
             torque = tuple(torque_raw)
-            if len(speed) != 5 or len(torque) != 5 or any(value < 0 or value > 255 for value in (*speed, *torque)):
-                raise DeploymentBindingError("Linker speed and torque need five values within 0..255")
+            if (
+                len(speed) != 5
+                or len(torque) != 5
+                or any(value < 0 or value > 255 for value in (*speed, *torque))
+            ):
+                raise DeploymentBindingError(
+                    "Linker speed and torque need five values within 0..255"
+                )
             sdk = LinkerSdkBinding(
                 _resolve(base, sdk_raw["sdk_root"], "gateway.linker_sdk.sdk_root"),
                 _text(sdk_raw["can_channel"], "gateway.linker_sdk.can_channel"),
@@ -330,9 +334,7 @@ class DeploymentBinding:
             _text(gateway_raw["gateway_id"], "gateway.gateway_id"),
             _positive_float(gateway_raw["gateway_hz"], "gateway.gateway_hz"),
             _positive_int(gateway_raw["state_stale_ns"], "gateway.state_stale_ns"),
-            _positive_int(
-                gateway_raw["command_watchdog_ns"], "gateway.command_watchdog_ns"
-            ),
+            _positive_int(gateway_raw["command_watchdog_ns"], "gateway.command_watchdog_ns"),
             _positive_float(
                 gateway_raw["maximum_round_trip_error_rad"],
                 "gateway.maximum_round_trip_error_rad",
@@ -419,9 +421,8 @@ class DeploymentBinding:
             "readiness",
         )
         provider_ids_raw = readiness_raw["required_provider_ids"]
-        if (
-            not isinstance(provider_ids_raw, list)
-            or any(not isinstance(value, str) or not value for value in provider_ids_raw)
+        if not isinstance(provider_ids_raw, list) or any(
+            not isinstance(value, str) or not value for value in provider_ids_raw
         ):
             raise DeploymentBindingError("readiness provider IDs must be non-empty strings")
         provider_ids = tuple(provider_ids_raw)
@@ -458,17 +459,13 @@ class DeploymentBinding:
         )
         handoff = HandoffRuntimeBinding(
             _positive_int(handoff_raw["ownership_lease_ns"], "handoff.ownership_lease_ns"),
-            _positive_float(
-                handoff_raw["gateway_ack_timeout_s"], "handoff.gateway_ack_timeout_s"
-            ),
+            _positive_float(handoff_raw["gateway_ack_timeout_s"], "handoff.gateway_ack_timeout_s"),
             _positive_int(
                 handoff_raw["teleop_command_period_ns"],
                 "handoff.teleop_command_period_ns",
             ),
             _positive_int(handoff_raw["policy_blend_ticks"], "handoff.policy_blend_ticks"),
-            _positive_int(
-                handoff_raw["handback_blend_ticks"], "handoff.handback_blend_ticks"
-            ),
+            _positive_int(handoff_raw["handback_blend_ticks"], "handoff.handback_blend_ticks"),
         )
 
         switch_raw = _object(raw["switch"], "switch")

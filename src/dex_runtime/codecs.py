@@ -48,12 +48,22 @@ class ProprioCodecSpec:
         elif self.measured_position_scaling == AFFINE_TO_MINUS_ONE_ONE:
             if self.measured_lower_rad is None or self.measured_upper_rad is None:
                 raise ValueError("affine scaling requires lower and upper limits")
-            if len(self.measured_lower_rad) != self.joint_count or len(self.measured_upper_rad) != self.joint_count:
+            if (
+                len(self.measured_lower_rad) != self.joint_count
+                or len(self.measured_upper_rad) != self.joint_count
+            ):
                 raise ValueError("affine limit widths must match joint_count")
-            if any(upper <= lower for lower, upper in zip(self.measured_lower_rad, self.measured_upper_rad, strict=False)):
+            if any(
+                upper <= lower
+                for lower, upper in zip(
+                    self.measured_lower_rad, self.measured_upper_rad, strict=False
+                )
+            ):
                 raise ValueError("every affine upper limit must exceed its lower limit")
         else:
-            raise ValueError(f"unsupported measured-position scaling {self.measured_position_scaling!r}")
+            raise ValueError(
+                f"unsupported measured-position scaling {self.measured_position_scaling!r}"
+            )
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -65,8 +75,12 @@ class ProprioCodecSpec:
             "actor_frame_count": self.actor_frame_count,
             "control_period_ns": self.control_period_ns,
             "measured_position_scaling": self.measured_position_scaling,
-            "measured_lower_rad": None if self.measured_lower_rad is None else list(self.measured_lower_rad),
-            "measured_upper_rad": None if self.measured_upper_rad is None else list(self.measured_upper_rad),
+            "measured_lower_rad": None
+            if self.measured_lower_rad is None
+            else list(self.measured_lower_rad),
+            "measured_upper_rad": None
+            if self.measured_upper_rad is None
+            else list(self.measured_upper_rad),
             "history_reset_semantics": self.history_reset_semantics,
         }
 

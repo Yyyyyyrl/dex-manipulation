@@ -10,7 +10,9 @@ from dex_contracts import (
 from dex_runtime.readiness import OperatorConfirmationProvider, ReadinessAggregator
 
 
-def _evidence(provider_id: str, result: ReadinessResult, *, valid_until_ns: int = 200) -> TaskReadinessEvidence:
+def _evidence(
+    provider_id: str, result: ReadinessResult, *, valid_until_ns: int = 200
+) -> TaskReadinessEvidence:
     return TaskReadinessEvidence(
         provider_id=provider_id,
         provider_version="1",

@@ -286,16 +286,15 @@ def run(args: argparse.Namespace) -> dict[str, object]:
             if viewer_start_ns == 0 and elapsed_s >= baseline_s:
                 viewer_start_ns = time.monotonic_ns()
                 slow_viewer = SlowSSEViewer(http_port)
-                viewers = [RefreshViewer(snapshot_url, viewer_stop) for _ in range(args.viewer_count)]
+                viewers = [
+                    RefreshViewer(snapshot_url, viewer_stop) for _ in range(args.viewer_count)
+                ]
                 for viewer in viewers:
                     viewer.start()
             snapshot = _snapshot(snapshot_url)
             last_revision = int(snapshot["revision"])
             rss_samples_kib.append(_rss_kib(process.pid))
-            health = {
-                name: snapshot["sources"][name]["health"]
-                for name in SOURCE_NAMES
-            }
+            health = {name: snapshot["sources"][name]["health"] for name in SOURCE_NAMES}
             if any(value != "healthy" for value in health.values()):
                 unhealthy_samples.append({"elapsed_s": round(elapsed_s, 3), "health": health})
             if time.monotonic() >= next_report:

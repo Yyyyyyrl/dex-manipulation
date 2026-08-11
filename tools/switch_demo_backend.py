@@ -131,9 +131,7 @@ def write_biased_policy(directory: Path, action: tuple[float, ...]) -> Path:
     save_file(actor_state, str(actor_path))
     manifest = json.loads((package / "manifest.json").read_text())
     manifest["display_name"] = "Demo bounded visible switch policy"
-    manifest["weights"]["actor"]["sha256"] = hashlib.sha256(
-        actor_path.read_bytes()
-    ).hexdigest()
+    manifest["weights"]["actor"]["sha256"] = hashlib.sha256(actor_path.read_bytes()).hexdigest()
     rewrite_manifest(package, manifest)
     return package
 
@@ -354,11 +352,12 @@ class BoundedTeleopRetargeter:
             self._last_target = tuple(state.semantic_position)
         bounded = tuple(
             min(max(value, lower), upper)
-            for value, lower, upper in zip(raw.semantic_position, self.lower, self.upper, strict=False)
+            for value, lower, upper in zip(
+                raw.semantic_position, self.lower, self.upper, strict=False
+            )
         )
         ramped = tuple(
-            current
-            + max(-self.RAMP_STEP_RAD, min(self.RAMP_STEP_RAD, desired - current))
+            current + max(-self.RAMP_STEP_RAD, min(self.RAMP_STEP_RAD, desired - current))
             for current, desired in zip(self._last_target, bounded, strict=False)
         )
         self._last_target = ramped
@@ -459,12 +458,8 @@ def _base_config(work: Path, package: Path) -> dict:
         },
         "teleop": {
             "repository_root": str(ROOT),
-            "profile_path": str(
-                ROOT / "configs/teleop/linker_g20_left_openxr_dexpilot_v1.json"
-            ),
-            "retargeting_model_directory": str(
-                ROOT / "src/dex_hardware_linker/assets/model"
-            ),
+            "profile_path": str(ROOT / "configs/teleop/linker_g20_left_openxr_dexpilot_v1.json"),
+            "retargeting_model_directory": str(ROOT / "src/dex_hardware_linker/assets/model"),
             "manus": {
                 "source_id": "openxr-left",
                 "topic": "openxr_left_hand",
@@ -628,7 +623,8 @@ def build_runtime(
             (lower + upper) * 0.5
             for lower, upper in zip(
                 action_transform["position_lower_rad"],
-                action_transform["position_upper_rad"], strict=False,
+                action_transform["position_upper_rad"],
+                strict=False,
             )
         )
     else:

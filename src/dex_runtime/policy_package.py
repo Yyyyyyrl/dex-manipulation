@@ -53,9 +53,7 @@ class PolicyPackageValidationError(ValueError):
 
 
 def _reject_json_constant(value: str) -> object:
-    raise PolicyPackageValidationError(
-        f"non-standard JSON numeric constant is forbidden: {value}"
-    )
+    raise PolicyPackageValidationError(f"non-standard JSON numeric constant is forbidden: {value}")
 
 
 def _sha256_file(path: Path) -> str:
@@ -125,7 +123,9 @@ class ValidatedPolicyPackage:
     descriptor: PolicyDescriptor
     codec_spec: ProprioCodecSpec
 
-    def load_tensors(self, device: str = "cpu") -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
+    def load_tensors(
+        self, device: str = "cpu"
+    ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
         weights = _mapping(self.manifest["weights"], "weights")
         actor = _mapping(weights["actor"], "actor weight entry")
         adapter = _mapping(weights["adapter"], "adapter weight entry")
@@ -150,7 +150,10 @@ class RegistrySnapshot:
 
 def _validate_manifest_structure(manifest: Mapping[str, object]) -> ProprioCodecSpec:
     _exact(manifest, _TOP_LEVEL_FIELDS, "manifest")
-    if manifest["package_format"] != PACKAGE_FORMAT or manifest["package_format_version"] != PACKAGE_FORMAT_VERSION:
+    if (
+        manifest["package_format"] != PACKAGE_FORMAT
+        or manifest["package_format_version"] != PACKAGE_FORMAT_VERSION
+    ):
         raise PolicyPackageValidationError("unsupported policy package format")
     if manifest["protocol_version"] != "1.0":
         raise PolicyPackageValidationError("unsupported package protocol")
@@ -228,7 +231,10 @@ def _validate_manifest_structure(manifest: Mapping[str, object]) -> ProprioCodec
     )
     if adapter["architecture_id"] != "proprio-adapt-tconv-v1":
         raise PolicyPackageValidationError("unsupported adapter architecture")
-    if int(adapter["frame_dim"]) != codec.frame_dim or int(adapter["history_length"]) != codec.history_length:
+    if (
+        int(adapter["frame_dim"]) != codec.frame_dim
+        or int(adapter["history_length"]) != codec.history_length
+    ):
         raise PolicyPackageValidationError("adapter history shape differs from codec")
 
     assembler = _mapping(manifest["actor_input_assembler"], "actor input assembler")
@@ -257,13 +263,21 @@ def _validate_manifest_structure(manifest: Mapping[str, object]) -> ProprioCodec
         },
         "action transform",
     )
-    if action["kind"] != "bounded-delta-position" or action["integration_semantics"] != "acknowledged-effective-target-plus-delta":
+    if (
+        action["kind"] != "bounded-delta-position"
+        or action["integration_semantics"] != "acknowledged-effective-target-plus-delta"
+    ):
         raise PolicyPackageValidationError("unsupported action integration semantics")
     if action["action_clip"] != [-1.0, 1.0] or float(action["delta_scale_rad"]) <= 0:
         raise PolicyPackageValidationError("invalid action clipping or delta scale")
     lower = action["position_lower_rad"]
     upper = action["position_upper_rad"]
-    if not isinstance(lower, list) or not isinstance(upper, list) or len(lower) != codec.joint_count or len(upper) != codec.joint_count:
+    if (
+        not isinstance(lower, list)
+        or not isinstance(upper, list)
+        or len(lower) != codec.joint_count
+        or len(upper) != codec.joint_count
+    ):
         raise PolicyPackageValidationError("invalid action position-limit width")
     if any(float(high) <= float(low) for low, high in zip(lower, upper, strict=False)):
         raise PolicyPackageValidationError("invalid action position limits")
@@ -280,12 +294,24 @@ def _validate_manifest_structure(manifest: Mapping[str, object]) -> ProprioCodec
     state = _mapping(manifest["state_requirements"], "state requirements")
     _exact(
         state,
-        {"fields", "acknowledgement_level", "maximum_state_age_ns", "maximum_effective_target_age_ns"},
+        {
+            "fields",
+            "acknowledgement_level",
+            "maximum_state_age_ns",
+            "maximum_effective_target_age_ns",
+        },
         "state requirements",
     )
-    if not isinstance(state["fields"], list) or "semantic_position" not in state["fields"] or "last_effective_target" not in state["fields"]:
+    if (
+        not isinstance(state["fields"], list)
+        or "semantic_position" not in state["fields"]
+        or "last_effective_target" not in state["fields"]
+    ):
         raise PolicyPackageValidationError("required hand state fields are incomplete")
-    if int(state["maximum_state_age_ns"]) <= 0 or int(state["maximum_effective_target_age_ns"]) <= 0:
+    if (
+        int(state["maximum_state_age_ns"]) <= 0
+        or int(state["maximum_effective_target_age_ns"]) <= 0
+    ):
         raise PolicyPackageValidationError("state freshness limits must be positive")
     _nonempty_string(state["acknowledgement_level"], "acknowledgement level")
 
@@ -311,12 +337,20 @@ def _validate_manifest_structure(manifest: Mapping[str, object]) -> ProprioCodec
     provenance = _mapping(manifest["provenance"], "provenance")
     _exact(
         provenance,
-        {"training_commit", "training_dirty", "resolved_training_config_digest", "urdf_digest", "asset_digests"},
+        {
+            "training_commit",
+            "training_dirty",
+            "resolved_training_config_digest",
+            "urdf_digest",
+            "asset_digests",
+        },
         "provenance",
     )
     for name in ("training_commit", "resolved_training_config_digest", "urdf_digest"):
         _nonempty_string(provenance[name], f"provenance.{name}")
-    if not isinstance(provenance["training_dirty"], bool) or not isinstance(provenance["asset_digests"], Mapping):
+    if not isinstance(provenance["training_dirty"], bool) or not isinstance(
+        provenance["asset_digests"], Mapping
+    ):
         raise PolicyPackageValidationError("invalid provenance dirty-state or asset digests")
 
     evaluation = _mapping(manifest["evaluation"], "evaluation")
@@ -325,7 +359,9 @@ def _validate_manifest_structure(manifest: Mapping[str, object]) -> ProprioCodec
         raise PolicyPackageValidationError("evaluation.results must be an object")
     _nonempty_string(evaluation["promotion_status"], "promotion status")
     readiness = manifest["readiness_provider_ids"]
-    if not isinstance(readiness, list) or any(not isinstance(item, str) or not item for item in readiness):
+    if not isinstance(readiness, list) or any(
+        not isinstance(item, str) or not item for item in readiness
+    ):
         raise PolicyPackageValidationError("readiness provider IDs must be strings")
 
     api = _mapping(manifest["supported_runtime_api"], "supported runtime API")
@@ -438,7 +474,10 @@ def check_policy_compatibility(
     }
     if (context.calibration_id, context.calibration_digest) not in accepted_calibrations:
         reasons.append("calibration-mismatch")
-    if context.control_period_ns is not None and context.control_period_ns != package.codec_spec.control_period_ns:
+    if (
+        context.control_period_ns is not None
+        and context.control_period_ns != package.codec_spec.control_period_ns
+    ):
         reasons.append("control-period-mismatch")
     if state["acknowledgement_level"] not in context.acknowledgement_levels:
         reasons.append("acknowledgement-level-unsupported")
@@ -462,7 +501,9 @@ class PolicyRegistry:
                 candidates.append(store)
             elif store.is_dir():
                 candidates.extend(
-                    child for child in sorted(store.iterdir()) if (child / MANIFEST_FILENAME).is_file()
+                    child
+                    for child in sorted(store.iterdir())
+                    if (child / MANIFEST_FILENAME).is_file()
                 )
         for directory in candidates:
             try:

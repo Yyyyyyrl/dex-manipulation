@@ -21,11 +21,7 @@ def _payload_health(payload: dict[str, object]) -> TelemetryHealth:
         return TelemetryHealth.FAULT
     if source_health in ("stale", "disconnected"):
         return TelemetryHealth.STALE
-    return (
-        TelemetryHealth.HEALTHY
-        if payload.get("connected")
-        else TelemetryHealth.STALE
-    )
+    return TelemetryHealth.HEALTHY if payload.get("connected") else TelemetryHealth.STALE
 
 
 class SyntheticArmTelemetry:
@@ -91,20 +87,13 @@ class SyntheticArmTelemetry:
                 0.0,
                 1.0,
             ],
-            "transformed_delta": [
-                round(target[index] - actual[index], 4) for index in range(6)
-            ],
+            "transformed_delta": [round(target[index] - actual[index], 4) for index in range(6)],
             "tcp_actual": [round(value, 4) for value in actual],
             "tcp_target": [round(value, 4) for value in target],
-            "trail_actual": [
-                [round(value, 4) for value in point] for point in trail_actual
-            ],
-            "trail_target": [
-                [round(value, 4) for value in point] for point in trail_target
-            ],
+            "trail_actual": [[round(value, 4) for value in point] for point in trail_actual],
+            "trail_target": [[round(value, 4) for value in point] for point in trail_target],
             "ik_target": [
-                round(4.0 + 6.0 * math.sin(phase + index * 0.35), 4)
-                for index in range(6)
+                round(4.0 + 6.0 * math.sin(phase + index * 0.35), 4) for index in range(6)
             ],
             "ik_ok": True,
             "servo_ok": True,
@@ -153,10 +142,7 @@ class ConsoleTelemetryPump:
             "d435": 0,
         }
         history_length = max(2, round(display_hz * 10.0))
-        self._latency_history = {
-            source: deque(maxlen=history_length)
-            for source in self._sequence
-        }
+        self._latency_history = {source: deque(maxlen=history_length) for source in self._sequence}
         self._stop = threading.Event()
         self._thread = threading.Thread(
             target=self._loop,
@@ -331,15 +317,11 @@ class ConsoleTelemetryPump:
             sample_ns = received_ns = now_ns
             rate_hz = 0.0
             health = TelemetryHealth.FAULT
-        configured_gateway = getattr(
-            getattr(self.controller, "gateway", None), "config", None
-        )
+        configured_gateway = getattr(getattr(self.controller, "gateway", None), "config", None)
         stale_ns = int(
             payload.get("stale_after_ns")
             or (
-                configured_gateway.state_stale_ns
-                if configured_gateway is not None
-                else 250_000_000
+                configured_gateway.state_stale_ns if configured_gateway is not None else 250_000_000
             )
         )
         self._publish(

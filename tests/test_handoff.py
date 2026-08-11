@@ -37,7 +37,10 @@ from policy_package_factory import (
     write_test_package,
 )
 
-MIDPOINT = tuple((lower + upper) * 0.5 for lower, upper in zip(CALIBRATION_LOWER, CALIBRATION_UPPER, strict=False))
+MIDPOINT = tuple(
+    (lower + upper) * 0.5
+    for lower, upper in zip(CALIBRATION_LOWER, CALIBRATION_UPPER, strict=False)
+)
 
 REQUIRED = (
     "operator-confirmation-v1",
@@ -156,8 +159,7 @@ def test_fake_arm_full_teleop_policy_handback_cycle_is_bumpless(tmp_path) -> Non
         source_state_sequence=0,
     )
     assert (
-        supervisor._blend_candidate(boundary_source, boundary_destination, 1 / 3)
-        .semantic_position
+        supervisor._blend_candidate(boundary_source, boundary_destination, 1 / 3).semantic_position
         == CALIBRATION_LOWER
     )
     initial = EffectiveHandTarget(

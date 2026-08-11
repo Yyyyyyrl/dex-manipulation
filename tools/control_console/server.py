@@ -119,9 +119,7 @@ class ConsoleRequestHandler(BaseHTTPRequestHandler):
         relative, content_type = route
         body = (self.server.assets_dir / relative).read_bytes()
         cache = (
-            "public, max-age=31536000, immutable"
-            if relative.startswith("fonts/")
-            else "no-cache"
+            "public, max-age=31536000, immutable" if relative.startswith("fonts/") else "no-cache"
         )
         self._send(200, body, content_type, cache_control=cache)
         return True

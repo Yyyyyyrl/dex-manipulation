@@ -37,9 +37,7 @@ def _snapshot_server(snapshot: dict) -> HTTPServer:
 def _run_startup_gate(snapshot: dict, *, enable_rl_switch: str) -> int:
     """Run the launcher's own readiness gate against a canned UI snapshot."""
 
-    match = re.search(
-        r"^hitbot_startup_ready\(\) \{.*?^\}", LAUNCHER.read_text(), re.S | re.M
-    )
+    match = re.search(r"^hitbot_startup_ready\(\) \{.*?^\}", LAUNCHER.read_text(), re.S | re.M)
     assert match is not None, "launcher no longer defines hitbot_startup_ready"
     server = _snapshot_server(snapshot)
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -140,7 +138,7 @@ def test_live_ui_launcher_preserves_hardware_safety_boundaries() -> None:
     assert "--arm-hold-port" in source
     assert "--camera d435" in source
     assert '--camera-python "$CAMERA_PYTHON"' in source
-    assert 'DEX_CAMERA_PYTHON:-/home/user/miniconda3/bin/python' in source
+    assert "DEX_CAMERA_PYTHON:-/home/user/miniconda3/bin/python" in source
     assert "import cv2, numpy, pyrealsense2" in source
     assert "install_d435_udev.sh" in source
     assert "--enable-real-arm-hold-switch" in source
@@ -149,7 +147,7 @@ def test_live_ui_launcher_preserves_hardware_safety_boundaries() -> None:
     assert "tools/vr_hitbot_controller.py" in source
     assert "tools/openxr_hand_bridge.py" not in source
     assert "--vr real" in source
-    assert 'DEX_FLATPAK_BIN:-flatpak' in source
+    assert "DEX_FLATPAK_BIN:-flatpak" in source
     assert 'WIVRN_APP_ID="io.github.wivrn.wivrn"' in source
     assert 'WIVRN_REF="${WIVRN_APP_ID}//stable"' in source
     assert 'run "$WIVRN_REF"' in source

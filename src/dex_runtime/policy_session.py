@@ -38,9 +38,7 @@ class RunningMeanStd(nn.Module):
         self.register_buffer("count", torch.ones((), dtype=torch.float32))
 
     def forward(self, value: torch.Tensor) -> torch.Tensor:
-        normalized = (value - self.running_mean) / torch.sqrt(
-            self.running_var + self.epsilon
-        )
+        normalized = (value - self.running_mean) / torch.sqrt(self.running_var + self.epsilon)
         return torch.clamp(normalized, -5.0, 5.0)
 
 
@@ -64,9 +62,7 @@ class RuntimeActor(nn.Module):
             width = output_width
         self.actor_mlp = nn.Sequential(*layers)
         self.mu = nn.Linear(width, self.action_dim)
-        self.running_mean_std = (
-            RunningMeanStd(self.proprio_dim) if self.normalize_input else None
-        )
+        self.running_mean_std = RunningMeanStd(self.proprio_dim) if self.normalize_input else None
 
     def forward(self, proprio: torch.Tensor, latent: torch.Tensor) -> torch.Tensor:
         if proprio.shape[-1] != self.proprio_dim or latent.shape[-1] != self.latent_dim:
@@ -100,9 +96,7 @@ class RuntimeAdapter(nn.Module):
 
     def forward(self, history: torch.Tensor) -> torch.Tensor:
         batch, ticks, width = history.shape
-        frames = self.frame_enc(history.reshape(batch * ticks, width)).reshape(
-            batch, ticks, 32
-        )
+        frames = self.frame_enc(history.reshape(batch * ticks, width)).reshape(batch, ticks, 32)
         return self.head(self.temporal(frames.permute(0, 2, 1)).flatten(1))
 
 
@@ -141,6 +135,7 @@ class PolicyInferenceTrace:
     action: tuple[float, ...]
     target: tuple[float, ...]
 
+
 class PolicySession:
     """One policy package, primed continuously before ownership is possible."""
 
@@ -152,11 +147,15 @@ class PolicySession:
         actor_arch = network["actor"]
         adapter_arch = network["adapter"]
         self.actor = RuntimeActor(actor_arch).to(self.device).eval()
-        self.adapter = RuntimeAdapter(
-            int(adapter_arch["frame_dim"]),
-            int(adapter_arch["history_length"]),
-            int(adapter_arch["output_dim"]),
-        ).to(self.device).eval()
+        self.adapter = (
+            RuntimeAdapter(
+                int(adapter_arch["frame_dim"]),
+                int(adapter_arch["history_length"]),
+                int(adapter_arch["output_dim"]),
+            )
+            .to(self.device)
+            .eval()
+        )
         actor_state, adapter_state = package.load_tensors(str(self.device))
         self.actor.load_state_dict(actor_state, strict=True)
         self.adapter.load_state_dict(adapter_state, strict=True)
@@ -167,12 +166,8 @@ class PolicySession:
         # at the policy/safety boundary. The actor runs in float32, where a
         # value such as -0.17 can round a few nanoradians outside the manifest
         # limit even after torch.clamp.
-        self._position_lower = tuple(
-            float(value) for value in transform["position_lower_rad"]
-        )
-        self._position_upper = tuple(
-            float(value) for value in transform["position_upper_rad"]
-        )
+        self._position_lower = tuple(float(value) for value in transform["position_lower_rad"])
+        self._position_upper = tuple(float(value) for value in transform["position_upper_rad"])
         self._lower = torch.tensor(
             self._position_lower, dtype=torch.float32, device=self.device
         ).reshape(1, -1)
@@ -190,9 +185,7 @@ class PolicySession:
         self._calibration_id = str(calibration["calibration_id"])
 
         self._state = PolicySessionState.LOADED
-        self._history = self.codec.empty_history(
-            (1,), device=self.device, dtype=torch.float32
-        )
+        self._history = self.codec.empty_history((1,), device=self.device, dtype=torch.float32)
         self._history_count = 0
         self._effective_target: torch.Tensor | None = None
         self._latest_tick: int | None = None
@@ -231,7 +224,9 @@ class PolicySession:
 
     def _row(self, value: Sequence[float] | torch.Tensor, label: str) -> torch.Tensor:
         tensor = torch.as_tensor(value, dtype=torch.float32, device=self.device).reshape(1, -1)
-        if tensor.shape[-1] != self.codec.spec.joint_count or not bool(torch.isfinite(tensor).all()):
+        if tensor.shape[-1] != self.codec.spec.joint_count or not bool(
+            torch.isfinite(tensor).all()
+        ):
             raise ValueError(f"{label} must contain finite canonical semantic joints")
         return tensor
 
@@ -265,9 +260,7 @@ class PolicySession:
         effective = self._row(effective_target_rad, "effective target")
         self._require_target_within_limits(effective)
         self.codec.encode_frame(measured, effective)
-        self._history = self.codec.empty_history(
-            (1,), device=self.device, dtype=torch.float32
-        )
+        self._history = self.codec.empty_history((1,), device=self.device, dtype=torch.float32)
         self._history_count = 0
         self._effective_target = effective
         self._latest_tick = None
@@ -328,7 +321,11 @@ class PolicySession:
         self._cached_preview = None
 
     def _identity(self) -> MessageIdentity:
-        if self._control_session_id is None or self._source_id is None or self._control_epoch is None:
+        if (
+            self._control_session_id is None
+            or self._source_id is None
+            or self._control_epoch is None
+        ):
             raise RuntimeError("policy session identity is not initialized")
         return MessageIdentity(
             protocol_version=PROTOCOL_VERSION,
@@ -352,7 +349,11 @@ class PolicySession:
             raise RuntimeError("policy preview requires shadow or active state")
         if self._history_count < self.codec.spec.history_length:
             raise RuntimeError("policy history is not ready")
-        if self._latest_tick is None or self._latest_scheduled_ns is None or self._effective_target is None:
+        if (
+            self._latest_tick is None
+            or self._latest_scheduled_ns is None
+            or self._effective_target is None
+        ):
             raise RuntimeError("policy has no current observation")
         if self._cached_tick == self._latest_tick and self._cached_preview is not None:
             return self._cached_preview

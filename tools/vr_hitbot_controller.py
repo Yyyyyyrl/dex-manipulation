@@ -29,9 +29,15 @@ TCP_RESYNC_S = 0.5
 # before tightening this.
 TCP_DRIFT_LIMIT_MM = 50.0
 HOLD_REQUEST_FIELDS = {
-    "schema_version", "kind", "command_id", "control_session_id",
-    "control_epoch", "action", "sent_monotonic_ns",
-    "deadline_monotonic_ns", "hold_lease_ns",
+    "schema_version",
+    "kind",
+    "command_id",
+    "control_session_id",
+    "control_epoch",
+    "action",
+    "sent_monotonic_ns",
+    "deadline_monotonic_ns",
+    "hold_lease_ns",
 }
 HOLD_STATES = {"PREPARED", "HOLDING", "VERIFIED", "REANCHOR_ACKED", "FAULT_HOLD"}
 
@@ -148,6 +154,7 @@ class HitbotOwner:
             quaternion_from_euler,
             quaternion_multiply,
         )
+
         self.euler_from_quaternion = euler_from_quaternion
         self.quaternion_from_euler = quaternion_from_euler
         self.quaternion_multiply = quaternion_multiply
@@ -207,7 +214,9 @@ class HitbotOwner:
             "ik_ms": ik_ns / 1_000_000,
             "servo_call_ms": servo_call_ns / 1_000_000,
             "cycle_latency_ms": max(0, time.perf_counter_ns() - cycle_start_ns) / 1_000_000,
-            "servo_interval_ms": None if servo_interval_ns is None else servo_interval_ns / 1_000_000,
+            "servo_interval_ms": None
+            if servo_interval_ns is None
+            else servo_interval_ns / 1_000_000,
             "failure_reason": failure_reason,
             "consecutive_failures": self.consecutive_failures,
             "position_units": "mm",
@@ -262,13 +271,10 @@ class HitbotOwner:
                 self.measured_tcp_t = time.perf_counter()
                 measured = True
                 if self.commanded_tcp is not None:
-                    drift_mm = float(
-                        np.linalg.norm(self.measured_tcp[:3] - self.commanded_tcp[:3])
-                    )
+                    drift_mm = float(np.linalg.norm(self.measured_tcp[:3] - self.commanded_tcp[:3]))
                     if drift_mm > self.tcp_drift_limit_mm:
                         raise RuntimeError(
-                            f"tcp-tracking-drift:{drift_mm:.1f}mm"
-                            f">{self.tcp_drift_limit_mm:.1f}mm"
+                            f"tcp-tracking-drift:{drift_mm:.1f}mm>{self.tcp_drift_limit_mm:.1f}mm"
                         )
                 # Re-anchor on the measurement so integration error can never
                 # accumulate across more than one re-sync interval.
@@ -449,7 +455,9 @@ class ArmHoldController:
         self._resume_anchor = None
         return None if anchor is None else anchor.copy()
 
-    def _response(self, request: dict[str, object], ok: bool, reason: str = "") -> dict[str, object]:
+    def _response(
+        self, request: dict[str, object], ok: bool, reason: str = ""
+    ) -> dict[str, object]:
         return {
             "schema_version": 1,
             "kind": "response",
@@ -478,11 +486,23 @@ class ArmHoldController:
         for name in ("command_id", "control_session_id", "action"):
             if not isinstance(request.get(name), str) or not request[name]:
                 raise ValueError(f"invalid-{name}")
-        for name in ("control_epoch", "sent_monotonic_ns", "deadline_monotonic_ns", "hold_lease_ns"):
+        for name in (
+            "control_epoch",
+            "sent_monotonic_ns",
+            "deadline_monotonic_ns",
+            "hold_lease_ns",
+        ):
             value = request.get(name)
             if isinstance(value, bool) or not isinstance(value, int) or value < 0:
                 raise ValueError(f"invalid-{name}")
-        if request["action"] not in {"status", "prepare", "enter", "heartbeat", "reanchor", "release"}:
+        if request["action"] not in {
+            "status",
+            "prepare",
+            "enter",
+            "heartbeat",
+            "reanchor",
+            "release",
+        }:
             raise ValueError("invalid-action")
         now_ns = time.monotonic_ns()
         if request["deadline_monotonic_ns"] < now_ns:
@@ -494,7 +514,10 @@ class ArmHoldController:
         return request
 
     def _identity_matches(self, request: dict[str, object]) -> bool:
-        return request["control_session_id"] == self.control_session_id and request["control_epoch"] == self.control_epoch
+        return (
+            request["control_session_id"] == self.control_session_id
+            and request["control_epoch"] == self.control_epoch
+        )
 
     def handle(self, raw_request: object) -> dict[str, object]:
         try:
@@ -510,7 +533,11 @@ class ArmHoldController:
                 "control_epoch": epoch,
             }
             return self._response(fallback, False, str(exc))
-        key = (str(request["control_session_id"]), int(request["control_epoch"]), str(request["command_id"]))
+        key = (
+            str(request["control_session_id"]),
+            int(request["control_epoch"]),
+            str(request["command_id"]),
+        )
         if key in self._responses:
             return dict(self._responses[key])
         action = str(request["action"])
@@ -518,7 +545,9 @@ class ArmHoldController:
         try:
             if action == "status":
                 matched = self.state == "TELEOP" or self._identity_matches(request)
-                response = self._response(request, matched, "" if matched else "owned-by-another-session")
+                response = self._response(
+                    request, matched, "" if matched else "owned-by-another-session"
+                )
             elif action == "prepare":
                 if self.state != "TELEOP":
                     response = self._response(request, False, "arm-not-in-teleop")
@@ -529,7 +558,9 @@ class ArmHoldController:
                     self._stable_samples = 0
                     self.fault_reason = None
                     self.state = "PREPARED"
-                    self.anchor_tcp = _finite_vector(self.owner.hitbot.get_tcp_pose(), 6, "hold TCP")
+                    self.anchor_tcp = _finite_vector(
+                        self.owner.hitbot.get_tcp_pose(), 6, "hold TCP"
+                    )
                     raw_joints = self.owner.hitbot.get_ik(self.anchor_tcp)
                     if isinstance(raw_joints, str):
                         raise RuntimeError(f"hold-anchor-ik-failed:{raw_joints}")
@@ -554,7 +585,10 @@ class ArmHoldController:
             elif action == "reanchor":
                 if self.state != "VERIFIED":
                     response = self._response(request, False, "hold-not-verified")
-                elif self._latest_tracker is None or now_ns - self._latest_tracker_ns > TRACKER_STALE_NS:
+                elif (
+                    self._latest_tracker is None
+                    or now_ns - self._latest_tracker_ns > TRACKER_STALE_NS
+                ):
                     response = self._response(request, False, "tracker-anchor-stale")
                 else:
                     self._resume_anchor = self._latest_tracker.copy()
@@ -565,7 +599,10 @@ class ArmHoldController:
             elif action == "release":
                 if self.state != "REANCHOR_ACKED" or self._resume_anchor is None:
                     response = self._response(request, False, "teleop-not-reanchored")
-                elif self._latest_tracker is None or now_ns - self._latest_tracker_ns > TRACKER_STALE_NS:
+                elif (
+                    self._latest_tracker is None
+                    or now_ns - self._latest_tracker_ns > TRACKER_STALE_NS
+                ):
                     response = self._response(request, False, "release-tracker-stale")
                 else:
                     self._resume_anchor = self._latest_tracker.copy()
@@ -687,10 +724,15 @@ class OpenXRWristReceiver:
             valid = payload.get("valid_mask")
             joints = payload.get("joints")
             if (
-                isinstance(sequence, bool) or not isinstance(sequence, int)
-                or isinstance(sample_ns, bool) or not isinstance(sample_ns, int)
-                or not isinstance(valid, list) or len(valid) != 26 or valid[1] is not True
-                or not isinstance(joints, list) or len(joints) != 26
+                isinstance(sequence, bool)
+                or not isinstance(sequence, int)
+                or isinstance(sample_ns, bool)
+                or not isinstance(sample_ns, int)
+                or not isinstance(valid, list)
+                or len(valid) != 26
+                or valid[1] is not True
+                or not isinstance(joints, list)
+                or len(joints) != 26
                 or (self.last_sequence is not None and sequence <= self.last_sequence)
             ):
                 return None
@@ -756,13 +798,18 @@ def main() -> int:
             hold_server.poll(hold)
             received = wrist_receiver.receive()
             if received is None:
-                if last_sample_ns is not None and time.monotonic_ns() - last_sample_ns > TRACKER_STALE_NS:
+                if (
+                    last_sample_ns is not None
+                    and time.monotonic_ns() - last_sample_ns > TRACKER_STALE_NS
+                ):
                     last_tracker = None
                     last_sample_ns = None
                 hold.tick()
                 continue
             tracker, sample_ns = received
-            if last_sample_ns is not None and (sample_ns <= last_sample_ns or sample_ns - last_sample_ns > TRACKER_STALE_NS):
+            if last_sample_ns is not None and (
+                sample_ns <= last_sample_ns or sample_ns - last_sample_ns > TRACKER_STALE_NS
+            ):
                 print("[arm] OpenXR discontinuity; re-anchoring without motion", flush=True)
                 last_tracker = None
             hold.update_tracker(tracker, sample_ns)

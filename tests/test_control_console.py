@@ -165,7 +165,7 @@ def test_console_assets_are_english_only_offline_and_digest_verified() -> None:
     assert not re.search(r"[\u3400-\u4dbf\u4e00-\u9fff]", html + css + javascript)
     assert "system-ui" not in css
     assert "PingFang" not in css
-    assert "font-family: \"Dex UI\"" in css
+    assert 'font-family: "Dex UI"' in css
     assert 'id="readiness-providers"' in html
     assert 'id="camera-rgb"' in html
     assert 'id="camera-depth"' in html

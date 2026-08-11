@@ -13,9 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_runtime_mapping_matches_cross_repository_golden_trace():
     mapper = LinkerMapper.load()
-    fixture = json.loads(
-        (ROOT / "tests/fixtures/golden/linker_mapping_golden_v1.json").read_text()
-    )
+    fixture = json.loads((ROOT / "tests/fixtures/golden/linker_mapping_golden_v1.json").read_text())
     assert mapper.calibration.artifact_digest == fixture["calibration_digest"]
     assert mapper.calibration.semantic_schema_digest == fixture["semantic_schema_digest"]
     for case in fixture["cases"]:

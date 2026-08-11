@@ -99,7 +99,9 @@ def test_registry_scans_descriptors_and_reports_compatibility(tmp_path) -> None:
     snapshot = PolicyRegistry((store,), allow_unsigned_local=True).scan(_context())
     assert not snapshot.errors
     assert len(snapshot.entries) == 2
-    compatible = {entry.descriptor.task_id: entry.compatibility.compatible for entry in snapshot.entries}
+    compatible = {
+        entry.descriptor.task_id: entry.compatibility.compatible for entry in snapshot.entries
+    }
     assert compatible == {
         "free-object-rotation": False,
         "mounted-screwdriver-rotation": True,

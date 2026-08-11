@@ -104,12 +104,8 @@ def main() -> int:
                 cv2.convertScaleAbs(depth_raw, alpha=0.03),
                 cv2.COLORMAP_JET,
             )
-            rgb_ok, rgb_encoded = cv2.imencode(
-                ".jpg", color, [cv2.IMWRITE_JPEG_QUALITY, 88]
-            )
-            depth_ok, depth_encoded = cv2.imencode(
-                ".jpg", depth, [cv2.IMWRITE_JPEG_QUALITY, 84]
-            )
+            rgb_ok, rgb_encoded = cv2.imencode(".jpg", color, [cv2.IMWRITE_JPEG_QUALITY, 88])
+            depth_ok, depth_encoded = cv2.imencode(".jpg", depth, [cv2.IMWRITE_JPEG_QUALITY, 84])
             if not rgb_ok or not depth_ok:
                 raise RuntimeError("OpenCV failed to encode a D435 frame")
             output.send(

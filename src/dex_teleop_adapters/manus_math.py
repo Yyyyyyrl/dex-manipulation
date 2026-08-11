@@ -45,19 +45,19 @@ N_MANUS_NODES = 25
 # Manus node_id → MediaPipe 21 点下标（全点映射）。
 # 注意右侧注释里写的是【解剖学】关节名；引号里是 Manus 消息的 joint_type 字符串。
 MANUS_TO_MP = {
-    0: 0,    # Hand 根节点         → MP 0  wrist
+    0: 0,  # Hand 根节点         → MP 0  wrist
     # 拇指（4 节全用）
-    1: 1,    # Thumb "MCP"(=CMC)   → MP 1  thumb_cmc
-    2: 2,    # Thumb "PIP"(=MCP)   → MP 2  thumb_mcp
-    3: 3,    # Thumb "DIP"(=IP)    → MP 3  thumb_ip
-    4: 4,    # Thumb "TIP"         → MP 4  thumb_tip
+    1: 1,  # Thumb "MCP"(=CMC)   → MP 1  thumb_cmc
+    2: 2,  # Thumb "PIP"(=MCP)   → MP 2  thumb_mcp
+    3: 3,  # Thumb "DIP"(=IP)    → MP 3  thumb_ip
+    4: 4,  # Thumb "TIP"         → MP 4  thumb_tip
     # 食指（node 5 = 掌骨根，MP 无对应，弃用）
-    6: 5,    # Index "PIP"(=MCP)   → MP 5  index_mcp
-    7: 6,    # Index "IP"(=PIP)    → MP 6  index_pip
-    8: 7,    # Index "DIP"         → MP 7  index_dip
-    9: 8,    # Index "TIP"         → MP 8  index_tip
+    6: 5,  # Index "PIP"(=MCP)   → MP 5  index_mcp
+    7: 6,  # Index "IP"(=PIP)    → MP 6  index_pip
+    8: 7,  # Index "DIP"         → MP 7  index_dip
+    9: 8,  # Index "TIP"         → MP 8  index_tip
     # 中指（node 10 弃用）
-    11: 9,   # Middle "PIP"(=MCP)  → MP 9  middle_mcp
+    11: 9,  # Middle "PIP"(=MCP)  → MP 9  middle_mcp
     12: 10,  # Middle "IP"(=PIP)   → MP 10 middle_pip
     13: 11,  # Middle "DIP"        → MP 11 middle_dip
     14: 12,  # Middle "TIP"        → MP 12 middle_tip
@@ -92,14 +92,16 @@ def validate_layout(msg) -> None:
     if msg.raw_node_count != N_MANUS_NODES:
         raise ValueError(
             f"Manus raw_node_count={msg.raw_node_count}，期望 {N_MANUS_NODES}；"
-            "Core 版本可能改变了骨架布局，请重新核对 MANUS_TO_MP。")
+            "Core 版本可能改变了骨架布局，请重新核对 MANUS_TO_MP。"
+        )
     for node in msg.raw_nodes:
         expected = EXPECTED_LAYOUT[node.node_id]
         actual = (node.chain_type, node.joint_type)
         if actual != expected:
             raise ValueError(
                 f"node_id={node.node_id} 布局不符：期望 {expected}，实际 {actual}；"
-                "请重新核对 MANUS_TO_MP。")
+                "请重新核对 MANUS_TO_MP。"
+            )
 
 
 def msg_to_keypoints(msg) -> np.ndarray:

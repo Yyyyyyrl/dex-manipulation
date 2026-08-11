@@ -77,7 +77,12 @@ class HandoffConfig:
     def __post_init__(self) -> None:
         if not self.control_session_id or self.ownership_lease_ns <= 0:
             raise ValueError("handoff session and positive ownership lease are required")
-        if self.gateway_ack_timeout_s <= 0 or self.teleop_command_period_ns <= 0 or self.policy_blend_ticks <= 0 or self.handback_blend_ticks <= 0:
+        if (
+            self.gateway_ack_timeout_s <= 0
+            or self.teleop_command_period_ns <= 0
+            or self.policy_blend_ticks <= 0
+            or self.handback_blend_ticks <= 0
+        ):
             raise ValueError("handoff acknowledgement and blend bounds must be positive")
         mandatory = {
             "operator-confirmation-v1",
@@ -282,9 +287,7 @@ class HandoffSupervisor:
             control_period_ns=control_period_ns,
         )
         self._last_authorized_command = command
-        acknowledgement = self.hand_gateway.submit(command).wait(
-            self.config.gateway_ack_timeout_s
-        )
+        acknowledgement = self.hand_gateway.submit(command).wait(self.config.gateway_ack_timeout_s)
         self._last_gateway_acknowledgement = acknowledgement
         self.effective_target = acknowledgement.effective_target
         return acknowledgement.effective_target
@@ -350,7 +353,8 @@ class HandoffSupervisor:
                 source.semantic_position,
                 destination.semantic_position,
                 self.safety.limits.position_lower_rad,
-                self.safety.limits.position_upper_rad, strict=False,
+                self.safety.limits.position_upper_rad,
+                strict=False,
             )
         )
         identity = replace(destination.identity, source_id="handoff-transition")
@@ -378,9 +382,7 @@ class HandoffSupervisor:
         # at which this decision is actually made. Keeping these clocks
         # separate prevents a late hardware round trip from making a newly
         # received local Manus sample look future-dated.
-        decision_time_ns = (
-            scheduled_time_ns if actual_time_ns is None else actual_time_ns
-        )
+        decision_time_ns = scheduled_time_ns if actual_time_ns is None else actual_time_ns
         if decision_time_ns < scheduled_time_ns:
             raise ValueError("actual handoff time cannot precede scheduled time")
         self._last_rejection = None
@@ -492,9 +494,7 @@ class HandoffSupervisor:
             else:
                 if self._blend_source is None:
                     raise RuntimeError("policy blend source is missing")
-                tick, preview = self._policy_observe_and_preview(
-                    hand_state, scheduled_time_ns
-                )
+                tick, preview = self._policy_observe_and_preview(hand_state, scheduled_time_ns)
                 self._blend_index += 1
                 alpha = min(1.0, self._blend_index / self.config.policy_blend_ticks)
                 transition = self._blend_candidate(self._blend_source, preview, alpha)
@@ -570,9 +570,7 @@ class HandoffSupervisor:
                     raise RuntimeError("hand-back blend source is missing")
                 self._blend_index += 1
                 alpha = min(1.0, self._blend_index / self.config.handback_blend_ticks)
-                transition = self._blend_candidate(
-                    self._blend_source, teleop_candidate, alpha
-                )
+                transition = self._blend_candidate(self._blend_source, teleop_candidate, alpha)
                 self._send(
                     transition,
                     hand_state,

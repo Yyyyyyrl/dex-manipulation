@@ -191,7 +191,9 @@ class HandOnlyRuntime:
         supervisor = self._supervisor
         package_id = self.preflight.policy_package.descriptor.package_id
         hand_owner, arm_owner = self._owners(
-            HandoffState(state) if state in HandoffState._value2member_map_ else HandoffState.DISCONNECTED
+            HandoffState(state)
+            if state in HandoffState._value2member_map_
+            else HandoffState.DISCONNECTED
         )
         self.event_logger.emit(
             RuntimeEvent(
@@ -367,7 +369,9 @@ class HandOnlyRuntime:
             )
         )
 
-    def run(self, *, max_ticks: int = 0, initial_input_timeout_s: float = 10.0) -> ApplicationResult:
+    def run(
+        self, *, max_ticks: int = 0, initial_input_timeout_s: float = 10.0
+    ) -> ApplicationResult:
         if self._started:
             raise RuntimeError("HandOnlyRuntime can be run only once")
         self._started = True
@@ -392,7 +396,9 @@ class HandOnlyRuntime:
             self._connected.set()
             period_ns = self.preflight.policy_package.codec_spec.control_period_ns
             if self.binding.handoff.teleop_command_period_ns != period_ns:
-                raise ValueError("hand-only runtime requires teleop and selected policy cadence to match")
+                raise ValueError(
+                    "hand-only runtime requires teleop and selected policy cadence to match"
+                )
             next_tick_ns = self.monotonic_ns()
             next_status_ns = next_tick_ns
             previous_state = self._supervisor.state

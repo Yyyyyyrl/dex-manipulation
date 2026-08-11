@@ -33,6 +33,7 @@ def _die_with_parent() -> None:
     except Exception:
         pass
 
+
 try:
     from tools.control_console import (
         ConsoleTelemetryPump,
@@ -105,22 +106,25 @@ def start_vr_bridge(
     command = [
         vr_python,
         str(_VR_BRIDGE),
-        "--host", host,
-        "--hand-port", str(hand_port),
-        "--arm-port", str(arm_port),
-        "--teleop-root", teleop_root,
+        "--host",
+        host,
+        "--hand-port",
+        str(hand_port),
+        "--arm-port",
+        str(arm_port),
+        "--teleop-root",
+        teleop_root,
     ]
     if mode == "fake":
         command.append("--fake")
     proc = subprocess.Popen(
         command,
         cwd=str(_HERE.parent),
-        stdout=log, stderr=subprocess.STDOUT, preexec_fn=_die_with_parent,
+        stdout=log,
+        stderr=subprocess.STDOUT,
+        preexec_fn=_die_with_parent,
     )
-    print(
-        f"[switch-web-demo] OpenXR bridge: {mode} -> "
-        f"hand udp {hand_port}, arm udp {arm_port}"
-    )
+    print(f"[switch-web-demo] OpenXR bridge: {mode} -> hand udp {hand_port}, arm udp {arm_port}")
     return proc
 
 
@@ -243,8 +247,7 @@ class DemoController:
                 if self.allow_switch and self._arm_available
                 else "Waiting for the verified Hitbot hold controller."
                 if self.allow_switch and self.require_arm_hold_controller
-                else self.switch_block_reason
-                or "Monitoring only. RL switching is disabled."
+                else self.switch_block_reason or "Monitoring only. RL switching is disabled."
             )
 
     def _maybe_probe_arm(self, *, force: bool = False) -> bool:
@@ -269,8 +272,7 @@ class DemoController:
             self._arm_available = available
             if self._confirmed:
                 self._message = (
-                    self.switch_block_reason
-                    or "Monitoring only. RL switching is disabled."
+                    self.switch_block_reason or "Monitoring only. RL switching is disabled."
                     if not self.allow_switch
                     else "Connected and confirmed. Use F12 to request RL control."
                     if available
@@ -320,9 +322,14 @@ class DemoController:
         with self._lock:
             pending = self._pending_stop
             status = self._status
-        if pending and status is not None and status.state in (
-            HandoffState.TELEOP_ACTIVE.value,
-            HandoffState.RL_SHADOW.value,
+        if (
+            pending
+            and status is not None
+            and status.state
+            in (
+                HandoffState.TELEOP_ACTIVE.value,
+                HandoffState.RL_SHADOW.value,
+            )
         ):
             self.runtime.request_stop()
 
@@ -413,7 +420,9 @@ class DemoController:
         self.runtime.confirm_operator("web-console-operator")
         with self._lock:
             self._confirmed = True
-            self._message = "Operator confirmation refreshed. Readiness will update on the next control tick."
+            self._message = (
+                "Operator confirmation refreshed. Readiness will update on the next control tick."
+            )
         return {"ok": True, "message": self._message}
 
     def do_stop(self) -> dict:
@@ -510,9 +519,7 @@ class DemoController:
         )
         return {
             "connected": source_health == "healthy",
-            "mode": source_diagnostics.get(
-                "mode", diagnostics.get("bridge_mode", "runtime")
-            ),
+            "mode": source_diagnostics.get("mode", diagnostics.get("bridge_mode", "runtime")),
             "control_correlated": source_sequence == candidate_source_sequence,
             "drives_current_command": drives_current_command,
             "device": getattr(payload, "device", source_diagnostics.get("device")),
@@ -523,9 +530,7 @@ class DemoController:
             "layout": getattr(payload, "layout_id", None),
             "joint_count": len(points),
             "valid_joint_count": sum(bool(value) for value in sample.validity_mask),
-            "wrist_position_m": (
-                list(points[1]) if len(points) > 1 else None
-            ),
+            "wrist_position_m": (list(points[1]) if len(points) > 1 else None),
             "wrist_orientation_xyzw": (
                 list(payload.orientations_xyzw[1])
                 if len(getattr(payload, "orientations_xyzw", ())) > 1
@@ -538,9 +543,7 @@ class DemoController:
             "runtime_tick": frame.tick,
             "sample_monotonic_ns": sample.received_time_ns,
             "received_monotonic_ns": sample.received_time_ns,
-            "rate_hz": source_diagnostics.get(
-                "rate_hz", 1_000_000_000 / frame.control_period_ns
-            ),
+            "rate_hz": source_diagnostics.get("rate_hz", 1_000_000_000 / frame.control_period_ns),
             "dropped_since_last": source_diagnostics.get("dropped_since_last", 0),
             # The source itself is still validated against the strict timeout.
             # The aggregate envelope represents the last *completed* 10 Hz
@@ -582,17 +585,9 @@ class DemoController:
         requested_candidate = None if frame is None else frame.requested_candidate
         authorized_command = None if frame is None else frame.authorized_command
         gateway_acknowledgement = None if frame is None else frame.gateway_acknowledgement
-        effective = (
-            state.last_effective_target
-            if frame is None
-            else frame.effective_target
-        )
-        requested = (
-            None if requested_candidate is None else requested_candidate.semantic_position
-        )
-        authorized = (
-            None if authorized_command is None else authorized_command.semantic_position
-        )
+        effective = state.last_effective_target if frame is None else frame.effective_target
+        requested = None if requested_candidate is None else requested_candidate.semantic_position
+        authorized = None if authorized_command is None else authorized_command.semantic_position
         target = None if effective is None else effective.semantic_position
         joints = []
         maximum_error = None
@@ -631,14 +626,10 @@ class DemoController:
             rate_hz = 1_000_000_000 / frame.control_period_ns
             stale_after_ns = max(250_000_000, frame.control_period_ns * 2)
             freshness_age_ns = max(0, now_ns - frame.actual_time_ns)
-            state_age_at_tick_ns = max(
-                0, frame.actual_time_ns - state.acquisition_time_ns
-            )
+            state_age_at_tick_ns = max(0, frame.actual_time_ns - state.acquisition_time_ns)
         connected = fault is None and freshness_age_ns <= stale_after_ns
         rms_error = (
-            None
-            if not squared_errors
-            else (sum(squared_errors) / len(squared_errors)) ** 0.5
+            None if not squared_errors else (sum(squared_errors) / len(squared_errors)) ** 0.5
         )
         command_age_ms = (
             None
@@ -650,8 +641,7 @@ class DemoController:
             if gateway_acknowledgement is None
             else max(
                 0,
-                now_ns
-                - gateway_acknowledgement.gateway.acknowledged_time_ns,
+                now_ns - gateway_acknowledgement.gateway.acknowledged_time_ns,
             )
             / 1_000_000
         )
@@ -665,9 +655,7 @@ class DemoController:
                 "saturated_joints": list(frame.mapping_preview.saturated_joints),
             }
         command_identity_match = None
-        acknowledgement_missing = (
-            authorized_command is not None and gateway_acknowledgement is None
-        )
+        acknowledgement_missing = authorized_command is not None and gateway_acknowledgement is None
         if authorized_command is not None:
             command_identity_match = (
                 gateway_acknowledgement is not None
@@ -677,9 +665,7 @@ class DemoController:
                 == gateway_acknowledgement.effective_target.command_id
                 == effective.command_id
             )
-        epoch_match = (
-            frame is None or state.identity.control_epoch == frame.control_epoch
-        )
+        epoch_match = frame is None or state.identity.control_epoch == frame.control_epoch
         correlation_reasons = []
         if not epoch_match:
             correlation_reasons.append("state-control-epoch-mismatch")
@@ -711,7 +697,9 @@ class DemoController:
             "owner": (
                 frame.hand_owner
                 if frame is not None
-                else None if ownership is None else ownership.owner.value
+                else None
+                if ownership is None
+                else ownership.owner.value
             ),
             "control_epoch": (
                 frame.control_epoch if frame is not None else state.identity.control_epoch
@@ -728,29 +716,21 @@ class DemoController:
                 else state.acknowledgement_capability.name
             ),
             "runtime_tick": None if frame is None else frame.tick,
-            "control_sample_sequence": (
-                None if frame is None else frame.manus_sample.sequence
-            ),
+            "control_sample_sequence": (None if frame is None else frame.manus_sample.sequence),
             "candidate_source_sequence": (
                 None if frame is None else frame.teleop_candidate.source_state_sequence
             ),
             "requested_source": (
-                None
-                if requested_candidate is None
-                else requested_candidate.identity.source_id
+                None if requested_candidate is None else requested_candidate.identity.source_id
             ),
             "authorized_command_id": (
                 None if authorized_command is None else authorized_command.command_id
             ),
             "requested_candidate_sequence": (
-                None
-                if requested_candidate is None
-                else requested_candidate.identity.sequence
+                None if requested_candidate is None else requested_candidate.identity.sequence
             ),
             "authorized_command_sequence": (
-                None
-                if authorized_command is None
-                else authorized_command.identity.sequence
+                None if authorized_command is None else authorized_command.identity.sequence
             ),
             "acknowledged_command_id": (
                 None
@@ -762,9 +742,7 @@ class DemoController:
             "acknowledgement_age_ms": acknowledgement_age_ms,
             "maximum_error_rad": maximum_error,
             "rms_error_rad": rms_error,
-            "watchdog_healthy": (
-                None if ownership is None else ownership.watchdog_healthy
-            ),
+            "watchdog_healthy": (None if ownership is None else ownership.watchdog_healthy),
             "state_quality": state.state_quality,
             "hardware_faults": list(state.hardware_faults),
             "native_mapping": native_mapping,
@@ -791,7 +769,9 @@ class DemoController:
         else:
             state = status.state
             if state == HandoffState.RL_ACTIVE.value:
-                mode = "RL / CHECKPOINT INFERENCE" if not self.policy_action else "RL / SYNTHETIC BIAS"
+                mode = (
+                    "RL / CHECKPOINT INFERENCE" if not self.policy_action else "RL / SYNTHETIC BIAS"
+                )
             elif state in (
                 HandoffState.RL_SHADOW.value,
                 HandoffState.TELEOP_ACTIVE.value,
@@ -817,31 +797,29 @@ class DemoController:
             message = "The runtime stopped safely and finalized its logs."
 
         history = None
-        if status is not None and status.history_count is not None and status.history_required is not None:
+        if (
+            status is not None
+            and status.history_count is not None
+            and status.history_required is not None
+        ):
             history = f"{status.history_count}/{status.history_required}"
 
         policy_bias = [
-            f"{index}:{value:+.2f}"
-            for index, value in enumerate(self.policy_action)
-            if value
+            f"{index}:{value:+.2f}" for index, value in enumerate(self.policy_action) if value
         ]
 
         # Preserve the evidence from one completed control tick.  The browser
         # never reconstructs readiness from unrelated, differently timed
         # source snapshots.
         control_frame = getattr(self.runtime, "latest_control_telemetry", None)
-        readiness_snapshot = (
-            None if control_frame is None else control_frame.readiness
-        )
+        readiness_snapshot = None if control_frame is None else control_frame.readiness
         readiness_providers = []
         readiness_blocking_reasons = []
         readiness_ready = None if status is None else status.readiness_ready
         if readiness_snapshot is not None:
             evaluated_time_ns = readiness_snapshot.evaluated_time_ns
             readiness_ready = readiness_snapshot.ready
-            readiness_blocking_reasons = list(
-                readiness_snapshot.blocking_reasons
-            )
+            readiness_blocking_reasons = list(readiness_snapshot.blocking_reasons)
             for evidence in readiness_snapshot.evidence:
                 readiness_providers.append(
                     {
@@ -875,9 +853,7 @@ class DemoController:
             "rl_timeout_remaining": rl_remaining,
             "switchable": self._switchable(status) and not pending_stop and not stopped,
             "switch_gate": switch_gate,
-            "arm_hold_ready": (
-                arm_available if self.require_arm_hold_controller else None
-            ),
+            "arm_hold_ready": (arm_available if self.require_arm_hold_controller else None),
             "switch_block_reason": (
                 "RL switch unavailable: verified Hitbot hold controller is not connected."
                 if switch_gate == "waiting-arm-hold"
@@ -1006,8 +982,7 @@ def _resolved_vr_mode(args: argparse.Namespace) -> str:
         return args.vr
     return (
         "real"
-        if Path(args.teleop_root, "main_new.py").is_file()
-        and os.access(args.vr_python, os.X_OK)
+        if Path(args.teleop_root, "main_new.py").is_file() and os.access(args.vr_python, os.X_OK)
         else "off"
     )
 
@@ -1089,9 +1064,7 @@ def main() -> int:
         switch=switch,
         renderer=renderer,
         auto_handback_s=args.auto_handback_seconds,
-        allow_switch=(
-            args.arm_telemetry != "live" or args.enable_real_arm_hold_switch
-        ),
+        allow_switch=(args.arm_telemetry != "live" or args.enable_real_arm_hold_switch),
         switch_block_reason=(
             "RL switch disabled until explicit real-arm HIL authorization is enabled."
             if args.arm_telemetry == "live" and not args.enable_real_arm_hold_switch

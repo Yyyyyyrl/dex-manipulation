@@ -92,7 +92,7 @@ def test_manus_candidate_reaches_hand_only_through_exclusive_gateway() -> None:
         control_session_id="m1-session",
         control_epoch=1,
         task_id=None,
-            task_version=None,
+        task_version=None,
     )
 
     mapper = LinkerMapper.load()
@@ -154,9 +154,10 @@ def test_manus_candidate_reaches_hand_only_through_exclusive_gateway() -> None:
         )
         acknowledgement = gateway.submit(command).wait(1.0)
         assert acknowledgement.gateway.level is AcknowledgementLevel.SENT_TO_BUS
-        assert acknowledgement.effective_target.semantic_position == mapper.prepare(
-            candidate.semantic_position
-        ).diagnostic_semantic
+        assert (
+            acknowledgement.effective_target.semantic_position
+            == mapper.prepare(candidate.semantic_position).diagnostic_semantic
+        )
         assert len(transport.sent_commands) == 1
     finally:
         gateway.stop()

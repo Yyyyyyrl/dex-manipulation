@@ -147,9 +147,7 @@ class _Retargeting:
         pass
 
     def retarget(self, _reference) -> np.ndarray:
-        return np.asarray(
-            [0.25 if name == "thumb_cmc_roll" else 0.0 for name in self.joint_names]
-        )
+        return np.asarray([0.25 if name == "thumb_cmc_roll" else 0.0 for name in self.joint_names])
 
 
 def test_openxr_frame_retargets_to_the_existing_g20_semantic_contract() -> None:

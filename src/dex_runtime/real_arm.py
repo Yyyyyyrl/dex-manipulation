@@ -169,8 +169,7 @@ class RealArmGateway:
                 self._update_status(response)
                 if require_ok and response.get("ok") is not True:
                     raise RuntimeError(
-                        "arm hold request rejected: "
-                        + str(response.get("reason") or "unspecified")
+                        "arm hold request rejected: " + str(response.get("reason") or "unspecified")
                     )
                 return response
             self._set_disconnected("response-timeout")
@@ -216,7 +215,11 @@ class RealArmGateway:
     def _update_status(self, response: dict[str, object]) -> None:
         def optional_number(name: str) -> float | None:
             value = response.get(name)
-            return float(value) if isinstance(value, (int, float)) and not isinstance(value, bool) else None
+            return (
+                float(value)
+                if isinstance(value, (int, float)) and not isinstance(value, bool)
+                else None
+            )
 
         with self._status_lock:
             self._status = RealArmHoldStatus(
@@ -225,9 +228,7 @@ class RealArmGateway:
                 bool(response.get("active")),
                 bool(response.get("verified")),
                 int(response.get("anchor_generation") or 0),
-                None
-                if response.get("fault_reason") is None
-                else str(response["fault_reason"]),
+                None if response.get("fault_reason") is None else str(response["fault_reason"]),
                 str(response.get("state") or "UNKNOWN"),
                 self._control_epoch,
                 optional_number("position_error_mm"),

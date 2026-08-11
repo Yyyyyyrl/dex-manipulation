@@ -92,4 +92,3 @@ def test_wait_for_revision_wakes_on_publish() -> None:
 
     assert not thread.is_alive()
     assert result == [1]
-

@@ -330,7 +330,9 @@ class LinkerGateway:
                 semantic_effort=None,
                 acquisition_time_ns=native.acquisition_time_ns,
                 raw_native_state_ref=native.raw_reference,
-                state_quality="fresh" if now_ns - native.acquisition_time_ns <= self.config.state_stale_ns else "stale",
+                state_quality="fresh"
+                if now_ns - native.acquisition_time_ns <= self.config.state_stale_ns
+                else "stale",
                 missing_joint_mask=(False,) * len(semantic),
                 hardware_faults=native.faults,
                 temperatures_c=native.temperatures_c,
@@ -348,7 +350,9 @@ class LinkerGateway:
             if ownership is None or self._fault_reason is not None:
                 return
             expired = now_ns >= ownership.expiry_time_ns
-            missed = last_command is not None and now_ns - last_command > self.config.command_watchdog_ns
+            missed = (
+                last_command is not None and now_ns - last_command > self.config.command_watchdog_ns
+            )
             if expired or missed:
                 self._fault_reason = "ownership-expired" if expired else "command-watchdog-expired"
                 self._ownership = OwnershipState(

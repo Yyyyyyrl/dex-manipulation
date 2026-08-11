@@ -182,9 +182,7 @@ def test_ros_bridge_normalizes_manus_core_root_parent() -> None:
         return SimpleNamespace(
             node_id=node_id,
             parent_node_id=parent,
-            pose=SimpleNamespace(
-                position=SimpleNamespace(x=0.1, y=0.2, z=0.3)
-            ),
+            pose=SimpleNamespace(position=SimpleNamespace(x=0.1, y=0.2, z=0.3)),
         )
 
     assert _ros_node_record(node(0, 0))["parent"] == -1

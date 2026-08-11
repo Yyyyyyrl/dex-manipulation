@@ -120,7 +120,10 @@ def test_real_arm_gateway_requires_identity_bound_verified_hold_and_reanchor() -
         "release",
     ]
     assert all(request["control_session_id"] == "runtime-session" for request in server.requests)
-    assert all(request["deadline_monotonic_ns"] > request["sent_monotonic_ns"] for request in server.requests)
+    assert all(
+        request["deadline_monotonic_ns"] > request["sent_monotonic_ns"]
+        for request in server.requests
+    )
 
 
 def test_real_arm_gateway_timeout_is_not_hold_verification() -> None:

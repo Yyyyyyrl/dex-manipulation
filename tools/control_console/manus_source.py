@@ -24,11 +24,30 @@ SCHEMA_VERSION = 1
 LAYOUT_ID = "manus-raw-25-v1"
 PARENT_IDS = (
     -1,
-    0, 1, 2, 3,
-    0, 5, 6, 7, 8,
-    0, 10, 11, 12, 13,
-    0, 15, 16, 17, 18,
-    0, 20, 21, 22, 23,
+    0,
+    1,
+    2,
+    3,
+    0,
+    5,
+    6,
+    7,
+    8,
+    0,
+    10,
+    11,
+    12,
+    13,
+    0,
+    15,
+    16,
+    17,
+    18,
+    0,
+    20,
+    21,
+    22,
+    23,
 )
 
 
@@ -308,9 +327,7 @@ class UdpManusSource:
             }
             for index, point in enumerate(keypoints.points_m)
         ]
-        rate_hz = (
-            1_000_000_000 / (sum(intervals) / len(intervals)) if intervals else 0.0
-        )
+        rate_hz = 1_000_000_000 / (sum(intervals) / len(intervals)) if intervals else 0.0
         return {
             "connected": status.health is SourceHealth.HEALTHY,
             "schema_version": SCHEMA_VERSION,

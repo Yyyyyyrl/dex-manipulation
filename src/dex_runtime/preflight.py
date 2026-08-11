@@ -110,9 +110,7 @@ def preflight_deployment(config_path: str) -> PreflightResult:
     )
     compatibility = check_policy_compatibility(package, context)
     if not compatibility.compatible:
-        raise ValueError(
-            "selected policy is incompatible: " + ",".join(compatibility.reason_codes)
-        )
+        raise ValueError("selected policy is incompatible: " + ",".join(compatibility.reason_codes))
     package_rate_hz = 1_000_000_000 / package.codec_spec.control_period_ns
     if binding.gateway.gateway_hz < package_rate_hz:
         raise ValueError("gateway state rate is slower than the selected policy rate")
@@ -136,7 +134,8 @@ def preflight_deployment(config_path: str) -> PreflightResult:
             binding.safety.position_lower_rad,
             binding.safety.position_upper_rad,
             policy_lower,
-            policy_upper, strict=False,
+            policy_upper,
+            strict=False,
         )
     ):
         raise ValueError("policy action limits exceed deployment safety envelope")
@@ -148,15 +147,14 @@ def preflight_deployment(config_path: str) -> PreflightResult:
             binding.safety.position_lower_rad,
             binding.safety.position_upper_rad,
             calibration_lower,
-            calibration_upper, strict=False,
+            calibration_upper,
+            strict=False,
         )
     ):
         raise ValueError("deployment action limits exceed calibrated mapping limits")
     report = PreflightReport(
         binding_id=binding.binding_id,
-        hand_identity=(
-            f"{binding.hand.model} {binding.hand.side} {binding.hand.serial_number}"
-        ),
+        hand_identity=(f"{binding.hand.model} {binding.hand.side} {binding.hand.serial_number}"),
         calibration_id=calibration.calibration_id,
         calibration_digest=calibration.artifact_digest,
         teleop_profile_id=profile.profile_id,

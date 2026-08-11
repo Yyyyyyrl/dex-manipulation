@@ -24,12 +24,11 @@ def build_hand_only_runtime(preflight: PreflightResult) -> HandOnlyRuntime:
             (lower + upper) * 0.5
             for lower, upper in zip(
                 binding.safety.position_lower_rad,
-                binding.safety.position_upper_rad, strict=False,
+                binding.safety.position_upper_rad,
+                strict=False,
             )
         )
-        transport = FakeLinkerTransport(
-            preflight.mapper.prepare(midpoint).native_range
-        )
+        transport = FakeLinkerTransport(preflight.mapper.prepare(midpoint).native_range)
     else:
         sdk = binding.gateway.linker_sdk
         if sdk is None:

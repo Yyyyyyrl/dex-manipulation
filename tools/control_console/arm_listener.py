@@ -250,9 +250,7 @@ class ArmTelemetryListener:
             trail_actual = list(self._trail_actual)
             trail_target = list(self._trail_target)
         liveness_receive_ns = max(
-            value
-            for value in (receive_ns, heartbeat_receive_ns, 0)
-            if value is not None
+            value for value in (receive_ns, heartbeat_receive_ns, 0) if value is not None
         )
         if latest is None or receive_ns is None:
             heartbeat_fresh = (
