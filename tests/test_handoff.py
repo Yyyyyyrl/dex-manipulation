@@ -142,6 +142,24 @@ def test_fake_arm_full_teleop_policy_handback_cycle_is_bumpless(tmp_path) -> Non
         arm_gateway,
         safety,
     )
+    boundary_source = EffectiveHandTarget(
+        semantic_position=tuple(lower - 1e-8 for lower in CALIBRATION_LOWER),
+        command_id="quantized-boundary",
+        evidence_level=AcknowledgementLevel.SENT_TO_BUS,
+        evidence_time_ns=clock.now_ns(),
+    )
+    boundary_destination = TeleopHandCandidate(
+        identity=_identity(0, 0, "manus-retargeter"),
+        semantic_position=CALIBRATION_LOWER,
+        generated_time_ns=clock.now_ns(),
+        valid_until_ns=clock.now_ns() + 100_000_000,
+        source_state_sequence=0,
+    )
+    assert (
+        supervisor._blend_candidate(boundary_source, boundary_destination, 1 / 3)
+        .semantic_position
+        == CALIBRATION_LOWER
+    )
     initial = EffectiveHandTarget(
         semantic_position=MIDPOINT,
         command_id="initial",
@@ -151,6 +169,22 @@ def test_fake_arm_full_teleop_policy_handback_cycle_is_bumpless(tmp_path) -> Non
     supervisor.start(initial, now_ns=clock.now_ns())
     readiness = _readiness(clock.now_ns())
     session = PolicySession(package)
+
+    scheduled_ns = clock.now_ns()
+    slightly_late_candidate = TeleopHandCandidate(
+        identity=_identity(supervisor.hand_epoch, 0, "manus-retargeter"),
+        semantic_position=MIDPOINT,
+        generated_time_ns=scheduled_ns + 1_000_000,
+        valid_until_ns=scheduled_ns + 101_000_000,
+        source_state_sequence=0,
+    )
+    assert supervisor._candidate_valid(slightly_late_candidate, scheduled_ns)
+    too_far_future_candidate = replace(
+        slightly_late_candidate,
+        generated_time_ns=scheduled_ns + 100_000_001,
+        valid_until_ns=scheduled_ns + 200_000_001,
+    )
+    assert not supervisor._candidate_valid(too_far_future_candidate, scheduled_ns)
 
     sequence = 0
 
@@ -171,6 +205,45 @@ def test_fake_arm_full_teleop_policy_handback_cycle_is_bumpless(tmp_path) -> Non
             acknowledgement_capability=AcknowledgementLevel.SENT_TO_BUS,
         )
 
+    accepted_late = safety.evaluate(
+        slightly_late_candidate,
+        hand_state(scheduled_ns),
+        initial,
+        now_ns=scheduled_ns,
+        control_period_ns=100_000_000,
+    )
+    assert accepted_late.accepted
+    rejected_future = safety.evaluate(
+        too_far_future_candidate,
+        hand_state(scheduled_ns),
+        initial,
+        now_ns=scheduled_ns,
+        control_period_ns=100_000_000,
+    )
+    assert rejected_future.reason_codes == ("candidate-expired",)
+
+    # A blocking hardware round trip can make the runtime late while the
+    # independent Manus receiver continues publishing. The new local sample
+    # is valid at the actual decision time even though it is newer than the
+    # old nominal tick; this must not become a permanent runtime fault.
+    clock.advance_ns(175_000_000)
+    overrun_actual_ns = clock.now_ns()
+    overrun_candidate = TeleopHandCandidate(
+        identity=_identity(supervisor.hand_epoch, 0, "manus-retargeter"),
+        semantic_position=MIDPOINT,
+        generated_time_ns=overrun_actual_ns - 5_000_000,
+        valid_until_ns=overrun_actual_ns + 95_000_000,
+        source_state_sequence=1,
+    )
+    overrun_result = supervisor.tick(
+        hand_state(overrun_actual_ns),
+        overrun_candidate,
+        readiness,
+        scheduled_time_ns=scheduled_ns,
+        actual_time_ns=overrun_actual_ns,
+    )
+    assert overrun_result.state is HandoffState.TELEOP_ACTIVE
+
     mismatched_time_ns = clock.now_ns()
     mismatched_candidate = TeleopHandCandidate(
         identity=replace(
@@ -182,7 +255,7 @@ def test_fake_arm_full_teleop_policy_handback_cycle_is_bumpless(tmp_path) -> Non
         valid_until_ns=mismatched_time_ns + 100_000_000,
         source_state_sequence=sequence,
     )
-    with pytest.raises(ValueError, match="fresh compatible Manus candidate"):
+    with pytest.raises(ValueError, match="fresh compatible teleoperation candidate"):
         supervisor.tick(
             hand_state(mismatched_time_ns),
             mismatched_candidate,

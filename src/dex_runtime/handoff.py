@@ -24,7 +24,6 @@ from dex_contracts import (
     TeleopHandCandidate,
 )
 
-from .fake_arm import FakeArmGateway
 from .policy_session import PolicySession, PolicySessionState
 from .safety import HandSafetySupervisor
 
@@ -37,6 +36,16 @@ class HandGateway(Protocol):
     def prepare_ownership(self, ownership: OwnershipState): ...
     def commit_ownership(self, preparation) -> None: ...
     def submit(self, command) -> _Ticket: ...
+
+
+class ArmGateway(Protocol):
+    @property
+    def status(self): ...
+    def prepare_hold(self) -> None: ...
+    def enter_hold(self) -> None: ...
+    def verify_hold(self) -> bool: ...
+    def reanchor_teleop(self) -> None: ...
+    def release_to_teleop(self) -> None: ...
 
 
 class HandoffState(str, Enum):
@@ -100,7 +109,7 @@ class HandoffSupervisor:
         self,
         config: HandoffConfig,
         hand_gateway: HandGateway,
-        arm_gateway: FakeArmGateway,
+        arm_gateway: ArmGateway,
         safety: HandSafetySupervisor,
     ) -> None:
         if safety.binding.control_session_id != config.control_session_id:
@@ -117,9 +126,11 @@ class HandoffSupervisor:
         self._activation_requested = False
         self._handback_requested = False
         self._blend_index = 0
+        self._blend_source: EffectiveHandTarget | None = None
         self._last_rejection: str | None = None
         self._last_authorized_command: AuthorizedHandCommand | None = None
         self._last_gateway_acknowledgement: HandCommandAcknowledgement | None = None
+        self._last_requested_candidate: HandCandidate | None = None
 
     @property
     def hand_epoch(self) -> int:
@@ -138,6 +149,10 @@ class HandoffSupervisor:
         self,
     ) -> HandCommandAcknowledgement | None:
         return self._last_gateway_acknowledgement
+
+    @property
+    def last_requested_candidate(self) -> HandCandidate | None:
+        return self._last_requested_candidate
 
     def _transfer(self, owner: OwnerKind, now_ns: int) -> None:
         self._hand_epoch += 1
@@ -167,6 +182,7 @@ class HandoffSupervisor:
         self.state = HandoffState.TELEOP_ACTIVE
 
     def _readiness_ok(self, snapshot: ReadinessSnapshot, now_ns: int) -> tuple[bool, str]:
+        validation_time_ns = max(now_ns, snapshot.evaluated_time_ns)
         if not snapshot.ready:
             return False, ";".join(snapshot.blocking_reasons) or "readiness-not-ready"
         by_id = {item.provider_id: item for item in snapshot.evidence}
@@ -174,7 +190,7 @@ class HandoffSupervisor:
             item = by_id.get(provider_id)
             if item is None:
                 return False, f"readiness-missing:{provider_id}"
-            if not item.valid_at(now_ns):
+            if not item.valid_at(validation_time_ns):
                 return False, f"readiness-expired:{provider_id}"
             if item.result not in (ReadinessResult.PASS, ReadinessResult.OPERATOR_CONFIRMED):
                 return False, f"readiness-failed:{provider_id}"
@@ -223,7 +239,16 @@ class HandoffSupervisor:
         return SwitchRequestResult(False, f"toggle-invalid-in-{self.state.value}")
 
     def _candidate_valid(self, candidate: TeleopHandCandidate, now_ns: int) -> bool:
-        return candidate.valid_at(now_ns) and (
+        # Source callbacks run against the actual monotonic clock while the
+        # supervisor is ticked with the scheduled clock. A sample received
+        # just after its scheduled tick is fresh, not a future-dated sample.
+        # Bound that allowance to one declared control period so a genuinely
+        # future timestamp remains invalid.
+        future_skew_ns = candidate.generated_time_ns - now_ns
+        if future_skew_ns > self.config.teleop_command_period_ns:
+            return False
+        validation_time_ns = max(now_ns, candidate.generated_time_ns)
+        return candidate.valid_at(validation_time_ns) and (
             candidate.identity.control_session_id == self.config.control_session_id
             and candidate.identity.resource_id is ResourceId.HAND
             and candidate.identity.control_epoch == self._hand_epoch
@@ -246,6 +271,7 @@ class HandoffSupervisor:
     ) -> EffectiveHandTarget:
         if self.effective_target is None:
             raise RuntimeError("cannot authorize without effective-target evidence")
+        self._last_requested_candidate = candidate
         command = self.safety.authorize(
             candidate,
             hand_state,
@@ -268,16 +294,17 @@ class HandoffSupervisor:
         hand_state: HandState,
         teleop_candidate: TeleopHandCandidate,
         scheduled_time_ns: int,
+        decision_time_ns: int,
     ) -> PolicyHandCandidate | None:
         if self.policy_session is None:
             raise RuntimeError("shadow state has no policy session")
-        if not self._candidate_valid(teleop_candidate, scheduled_time_ns):
-            raise ValueError("fresh compatible Manus candidate is required")
+        if not self._candidate_valid(teleop_candidate, decision_time_ns):
+            raise ValueError("fresh compatible teleoperation candidate is required")
         effective = self._send(
             teleop_candidate,
             hand_state,
             owner=OwnerKind.TELEOP,
-            now_ns=scheduled_time_ns,
+            now_ns=decision_time_ns,
             control_period_ns=self.policy_session.codec.spec.control_period_ns,
         )
         self.policy_session.observe(
@@ -308,15 +335,23 @@ class HandoffSupervisor:
         self._policy_tick += 1
         return tick, self.policy_session.preview()
 
-    @staticmethod
     def _blend_candidate(
+        self,
         source: EffectiveHandTarget,
         destination: HandCandidate,
         alpha: float,
     ) -> HandCandidate:
         target = tuple(
-            (1.0 - alpha) * current + alpha * endpoint
-            for current, endpoint in zip(source.semantic_position, destination.semantic_position)
+            min(
+                max((1.0 - alpha) * current + alpha * endpoint, lower),
+                upper,
+            )
+            for current, endpoint, lower, upper in zip(
+                source.semantic_position,
+                destination.semantic_position,
+                self.safety.limits.position_lower_rad,
+                self.safety.limits.position_upper_rad,
+            )
         )
         identity = replace(destination.identity, source_id="handoff-transition")
         return HandCandidate(
@@ -336,22 +371,51 @@ class HandoffSupervisor:
         readiness: ReadinessSnapshot,
         *,
         scheduled_time_ns: int,
+        actual_time_ns: int | None = None,
     ) -> HandoffTickResult:
+        # Policy history is indexed by the nominal cadence, while freshness,
+        # safety authorization, leases, and readiness must use the clock time
+        # at which this decision is actually made. Keeping these clocks
+        # separate prevents a late hardware round trip from making a newly
+        # received local Manus sample look future-dated.
+        decision_time_ns = (
+            scheduled_time_ns if actual_time_ns is None else actual_time_ns
+        )
+        if decision_time_ns < scheduled_time_ns:
+            raise ValueError("actual handoff time cannot precede scheduled time")
         self._last_rejection = None
         self._last_authorized_command = None
         self._last_gateway_acknowledgement = None
+        self._last_requested_candidate = None
         alpha: float | None = None
         if self.effective_target is None:
             raise RuntimeError("handoff supervisor has no effective target")
 
+        hold_states = (
+            HandoffState.HAND_BLEND,
+            HandoffState.RL_ACTIVE,
+            HandoffState.HAND_BACK_PREPARE,
+            HandoffState.HAND_BACK_BLEND,
+            HandoffState.ARM_TELEOP_REANCHOR,
+        )
+        if self.state in hold_states:
+            try:
+                hold_verified = self.arm_gateway.verify_hold()
+            except BaseException as exc:  # hardware boundary: fail closed
+                hold_verified = False
+                self._last_rejection = f"arm-hold-check-failed:{type(exc).__name__}"
+            if not hold_verified:
+                reason = self._last_rejection or "arm-hold-lost"
+                self.enter_safe_hold(reason, now_ns=decision_time_ns)
+
         if self.state is HandoffState.TELEOP_ACTIVE:
-            if not self._candidate_valid(teleop_candidate, scheduled_time_ns):
-                raise ValueError("fresh compatible Manus candidate is required")
+            if not self._candidate_valid(teleop_candidate, decision_time_ns):
+                raise ValueError("fresh compatible teleoperation candidate is required")
             self._send(
                 teleop_candidate,
                 hand_state,
                 owner=OwnerKind.TELEOP,
-                now_ns=scheduled_time_ns,
+                now_ns=decision_time_ns,
                 control_period_ns=self.config.teleop_command_period_ns,
             )
 
@@ -361,58 +425,90 @@ class HandoffSupervisor:
             HandoffState.ARM_HOLD_VERIFY,
         ):
             preview = self._shadow_teleop_tick(
-                hand_state, teleop_candidate, scheduled_time_ns
+                hand_state,
+                teleop_candidate,
+                scheduled_time_ns,
+                decision_time_ns,
             )
             if self.state is HandoffState.RL_SHADOW and self._activation_requested:
-                ready, reason = self._readiness_ok(readiness, scheduled_time_ns)
+                ready, reason = self._readiness_ok(readiness, decision_time_ns)
                 if preview is None:
                     ready, reason = False, "policy-history-not-ready"
                 if not ready:
                     self._last_rejection = reason
                     self._activation_requested = False
                 else:
-                    self.arm_gateway.prepare_hold()
-                    self.state = HandoffState.ARM_HOLD_PREPARE
+                    try:
+                        self.arm_gateway.prepare_hold()
+                    except BaseException as exc:  # freeze may have happened; fail closed
+                        self.enter_safe_hold(
+                            f"arm-hold-prepare-failed:{type(exc).__name__}",
+                            now_ns=decision_time_ns,
+                        )
+                    else:
+                        self.state = HandoffState.ARM_HOLD_PREPARE
                     self._activation_requested = False
             elif self.state is HandoffState.ARM_HOLD_PREPARE:
-                ready, reason = self._readiness_ok(readiness, scheduled_time_ns)
+                ready, reason = self._readiness_ok(readiness, decision_time_ns)
                 if not ready:
-                    self.enter_safe_hold(reason, now_ns=scheduled_time_ns)
+                    self.enter_safe_hold(reason, now_ns=decision_time_ns)
                 else:
-                    self.arm_gateway.enter_hold()
-                    self.state = HandoffState.ARM_HOLD_VERIFY
+                    try:
+                        self.arm_gateway.enter_hold()
+                    except BaseException as exc:
+                        self.enter_safe_hold(
+                            f"arm-hold-enter-failed:{type(exc).__name__}",
+                            now_ns=decision_time_ns,
+                        )
+                    else:
+                        self.state = HandoffState.ARM_HOLD_VERIFY
             elif self.state is HandoffState.ARM_HOLD_VERIFY:
-                ready, reason = self._readiness_ok(readiness, scheduled_time_ns)
+                ready, reason = self._readiness_ok(readiness, decision_time_ns)
                 if not ready:
-                    self.enter_safe_hold(reason, now_ns=scheduled_time_ns)
-                elif not self.arm_gateway.verify_hold():
-                    self._last_rejection = "arm-hold-not-verified"
+                    self.enter_safe_hold(reason, now_ns=decision_time_ns)
                 else:
-                    self._transfer(OwnerKind.TRANSITION, scheduled_time_ns)
-                    self._blend_index = 0
-                    self.state = HandoffState.HAND_BLEND
+                    try:
+                        hold_verified = self.arm_gateway.verify_hold()
+                    except BaseException as exc:
+                        self.enter_safe_hold(
+                            f"arm-hold-verify-failed:{type(exc).__name__}",
+                            now_ns=decision_time_ns,
+                        )
+                        hold_verified = False
+                    if self.state is HandoffState.SAFE_HOLD:
+                        pass
+                    elif not hold_verified:
+                        self._last_rejection = "arm-hold-not-verified"
+                    else:
+                        self._transfer(OwnerKind.TRANSITION, decision_time_ns)
+                        self._blend_index = 0
+                        self._blend_source = self.effective_target
+                        self.state = HandoffState.HAND_BLEND
 
         elif self.state is HandoffState.HAND_BLEND:
-            ready, reason = self._readiness_ok(readiness, scheduled_time_ns)
+            ready, reason = self._readiness_ok(readiness, decision_time_ns)
             if not ready:
-                self.enter_safe_hold(reason, now_ns=scheduled_time_ns)
+                self.enter_safe_hold(reason, now_ns=decision_time_ns)
             else:
+                if self._blend_source is None:
+                    raise RuntimeError("policy blend source is missing")
                 tick, preview = self._policy_observe_and_preview(
                     hand_state, scheduled_time_ns
                 )
                 self._blend_index += 1
                 alpha = min(1.0, self._blend_index / self.config.policy_blend_ticks)
-                transition = self._blend_candidate(self.effective_target, preview, alpha)
+                transition = self._blend_candidate(self._blend_source, preview, alpha)
                 self._send(
                     transition,
                     hand_state,
                     owner=OwnerKind.TRANSITION,
-                    now_ns=scheduled_time_ns,
+                    now_ns=decision_time_ns,
                     control_period_ns=self.policy_session.codec.spec.control_period_ns,
                 )
                 if alpha >= 1.0:
-                    self._transfer(OwnerKind.POLICY, scheduled_time_ns)
+                    self._transfer(OwnerKind.POLICY, decision_time_ns)
                     self.policy_session.activate(tick=tick, control_epoch=self._hand_epoch)
+                    self._blend_source = None
                     self.state = HandoffState.RL_ACTIVE
 
         elif self.state is HandoffState.RL_ACTIVE:
@@ -430,12 +526,12 @@ class HandoffSupervisor:
                 candidate,
                 hand_state,
                 owner=OwnerKind.POLICY,
-                now_ns=scheduled_time_ns,
+                now_ns=decision_time_ns,
                 control_period_ns=self.policy_session.codec.spec.control_period_ns,
             )
-            ready, reason = self._readiness_ok(readiness, scheduled_time_ns)
+            ready, reason = self._readiness_ok(readiness, decision_time_ns)
             if not ready:
-                self.enter_safe_hold(reason, now_ns=scheduled_time_ns)
+                self.enter_safe_hold(reason, now_ns=decision_time_ns)
             elif self._handback_requested:
                 self.state = HandoffState.HAND_BACK_PREPARE
                 self._handback_requested = False
@@ -455,47 +551,51 @@ class HandoffSupervisor:
                 candidate,
                 hand_state,
                 owner=OwnerKind.POLICY,
-                now_ns=scheduled_time_ns,
+                now_ns=decision_time_ns,
                 control_period_ns=self.policy_session.codec.spec.control_period_ns,
             )
-            if not self._candidate_valid(teleop_candidate, scheduled_time_ns):
-                self._last_rejection = "fresh-Manus-target-required-for-handback"
+            if not self._candidate_valid(teleop_candidate, decision_time_ns):
+                self._last_rejection = "fresh-teleoperation-target-required-for-handback"
             else:
-                self._transfer(OwnerKind.TRANSITION, scheduled_time_ns)
+                self._transfer(OwnerKind.TRANSITION, decision_time_ns)
                 self._blend_index = 0
+                self._blend_source = self.effective_target
                 self.state = HandoffState.HAND_BACK_BLEND
 
         elif self.state is HandoffState.HAND_BACK_BLEND:
-            if not self._candidate_valid(teleop_candidate, scheduled_time_ns):
-                self._last_rejection = "fresh-Manus-target-required-for-handback"
+            if not self._candidate_valid(teleop_candidate, decision_time_ns):
+                self._last_rejection = "fresh-teleoperation-target-required-for-handback"
             else:
+                if self._blend_source is None:
+                    raise RuntimeError("hand-back blend source is missing")
                 self._blend_index += 1
                 alpha = min(1.0, self._blend_index / self.config.handback_blend_ticks)
                 transition = self._blend_candidate(
-                    self.effective_target, teleop_candidate, alpha
+                    self._blend_source, teleop_candidate, alpha
                 )
                 self._send(
                     transition,
                     hand_state,
                     owner=OwnerKind.TRANSITION,
-                    now_ns=scheduled_time_ns,
+                    now_ns=decision_time_ns,
                     control_period_ns=self.policy_session.codec.spec.control_period_ns,
                 )
                 if alpha >= 1.0:
-                    self._transfer(OwnerKind.TELEOP, scheduled_time_ns)
+                    self._transfer(OwnerKind.TELEOP, decision_time_ns)
                     self.policy_session.deactivate()
                     self.arm_gateway.reanchor_teleop()
+                    self._blend_source = None
                     self.state = HandoffState.ARM_TELEOP_REANCHOR
 
         elif self.state is HandoffState.ARM_TELEOP_REANCHOR:
-            if not self._candidate_valid(teleop_candidate, scheduled_time_ns):
-                self._last_rejection = "fresh-Manus-target-required-after-reanchor"
+            if not self._candidate_valid(teleop_candidate, decision_time_ns):
+                self._last_rejection = "fresh-teleoperation-target-required-after-reanchor"
             else:
                 self._send(
                     teleop_candidate,
                     hand_state,
                     owner=OwnerKind.TELEOP,
-                    now_ns=scheduled_time_ns,
+                    now_ns=decision_time_ns,
                     control_period_ns=self.config.teleop_command_period_ns,
                 )
                 self.arm_gateway.release_to_teleop()

@@ -117,12 +117,29 @@ def preflight_deployment(config_path: str) -> PreflightResult:
     if binding.gateway.gateway_hz < package_rate_hz:
         raise ValueError("gateway state rate is slower than the selected policy rate")
 
-    if tuple(binding.safety.position_lower_rad) != tuple(
+    policy_lower = tuple(
         float(value) for value in package.manifest["action_transform"]["position_lower_rad"]
-    ) or tuple(binding.safety.position_upper_rad) != tuple(
+    )
+    policy_upper = tuple(
         float(value) for value in package.manifest["action_transform"]["position_upper_rad"]
+    )
+    if len(policy_lower) != len(binding.safety.position_lower_rad) or len(policy_upper) != len(
+        binding.safety.position_upper_rad
     ):
-        raise ValueError("deployment and policy action limits differ")
+        raise ValueError("deployment and policy action widths differ")
+    # The deployment safety envelope must contain the policy's action clip range
+    # (a policy may command a tighter range than the hand's safety limits); the
+    # runtime safety supervisor still enforces the deployment bounds every tick.
+    if any(
+        safe_lower > pol_lower or safe_upper < pol_upper
+        for safe_lower, safe_upper, pol_lower, pol_upper in zip(
+            binding.safety.position_lower_rad,
+            binding.safety.position_upper_rad,
+            policy_lower,
+            policy_upper,
+        )
+    ):
+        raise ValueError("policy action limits exceed deployment safety envelope")
     calibration_lower = tuple(joint.lower for joint in calibration.joints)
     calibration_upper = tuple(joint.upper for joint in calibration.joints)
     if any(

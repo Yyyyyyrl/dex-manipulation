@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>DEX CONTROL / VR LIVE</title>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js" defer></script>
+</head>
+<body class="font-loading">
+  <div id="font-gate" role="status" aria-live="polite">
+    <div class="gate-mark" aria-hidden="true"></div>
+    <strong id="font-gate-title">VERIFYING INTERFACE ASSETS</strong>
+    <span id="font-gate-detail">Loading bundled fonts.</span>
+  </div>
+
+  <main id="console" aria-label="Dexterous manipulation live control console">
+    <header class="topbar">
+      <div class="brand">
+        <span class="eyebrow">ROBOTICS OPERATOR CONSOLE</span>
+        <h1>DEX CONTROL / VR LIVE</h1>
+      </div>
+      <div class="state-cluster">
+        <span id="stream-status" class="stream-status">STREAM CONNECTING</span>
+        <strong id="runtime-state" class="state-chip state-neutral">CONNECTING</strong>
+      </div>
+      <div class="health-strip" aria-label="Telemetry source health">
+        <span id="openxr-health" class="health-chip health-stale">OPENXR STALE</span>
+        <span id="linker-health" class="health-chip health-stale">LINKER STALE</span>
+        <span id="d435-health" class="health-chip health-stale">D435 STALE</span>
+        <span id="hitbot-health" class="health-chip health-stale">HITBOT STALE</span>
+      </div>
+      <dl class="session-meta">
+        <div><dt>SESSION</dt><dd id="session-id">--</dd></div>
+        <div><dt>LOCAL TIME</dt><dd id="local-clock">--:--:--</dd></div>
+      </dl>
+    </header>
+
+    <section class="primary-grid" aria-label="Live tracking">
+      <div class="left-stack">
+        <article class="panel openxr-panel">
+          <div class="panel-heading">
+            <div><span class="panel-index">01 / VR INPUT</span><h2>OPENXR HAND TRACKING</h2></div>
+            <span id="openxr-mode" class="mode-tag">NO SOURCE</span>
+          </div>
+          <div class="openxr-stage">
+            <svg id="openxr-skeleton" viewBox="0 0 420 340" role="img" aria-label="OpenXR left hand skeleton">
+              <g class="axis-glyph" aria-hidden="true">
+                <line x1="30" y1="308" x2="72" y2="308" class="axis-x"></line>
+                <line x1="30" y1="308" x2="30" y2="266" class="axis-y"></line>
+                <line x1="30" y1="308" x2="57" y2="283" class="axis-z"></line>
+                <text x="78" y="313">X</text><text x="24" y="258">Y</text><text x="61" y="279">Z</text>
+              </g>
+            </svg>
+            <div id="openxr-empty" class="empty-state">
+              <strong>WAITING FOR OPENXR HAND</strong>
+              <span>Wear Quest 3S, focus WiVRn, and keep the left hand visible.</span>
+            </div>
+            <dl class="metric-stack openxr-metrics">
+              <div><dt>DEVICE</dt><dd id="openxr-device">--</dd></div>
+              <div><dt>RUNTIME</dt><dd id="openxr-runtime">--</dd></div>
+              <div><dt>SESSION</dt><dd id="openxr-session">--</dd></div>
+              <div><dt>HAND</dt><dd id="openxr-side">--</dd></div>
+              <div><dt>JOINTS</dt><dd id="openxr-joints">0 / 26</dd></div>
+              <div><dt>RATE</dt><dd id="openxr-rate">-- Hz</dd></div>
+              <div><dt>AGE</dt><dd id="openxr-age">-- ms</dd></div>
+              <div><dt>PINCH</dt><dd id="openxr-pinch">-- mm</dd></div>
+            </dl>
+          </div>
+          <div class="source-note"><span id="openxr-wrist">WRIST 6DOF + 26 JOINTS</span><strong id="openxr-sequence">--</strong></div>
+        </article>
+
+        <article class="panel linker-panel">
+          <div class="panel-heading">
+            <div><span class="panel-index">02 / HAND</span><h2>LINKERHAND G20</h2></div>
+            <div class="legend" aria-label="Joint trace legend">
+              <span><i class="legend-actual"></i>ACT</span>
+              <span><i class="legend-requested"></i>REQ</span>
+              <span><i class="legend-authorized"></i>AUTH</span>
+              <span><i class="legend-effective"></i>EFF</span>
+            </div>
+          </div>
+          <div class="linker-body">
+            <div id="joint-tracks" class="joint-tracks" aria-label="Sixteen hand joints"></div>
+            <dl class="metric-stack linker-metrics">
+              <div><dt>OWNER</dt><dd id="linker-owner">--</dd></div>
+              <div><dt>RETARGET</dt><dd>DEXPILOT</dd></div>
+              <div><dt>ACK</dt><dd id="linker-ack">--</dd></div>
+              <div><dt>MAX / RMS</dt><dd><span id="linker-error">--</span> / <span id="linker-rms">--</span></dd></div>
+            </dl>
+          </div>
+          <div class="source-note">
+            <span id="joint-detail">SELECT A JOINT FOR LAYER VALUES</span>
+            <span>STATE <strong id="linker-sequence">--</strong></span>
+          </div>
+        </article>
+      </div>
+
+      <article class="panel camera-panel">
+        <div class="panel-heading">
+          <div><span class="panel-index">03 / VISION</span><h2>D435 LIVE VIEW</h2></div>
+          <div class="camera-badges">
+            <span id="camera-mode" class="mode-tag">NO SOURCE</span>
+            <span id="camera-rate" class="mode-tag">-- FPS</span>
+          </div>
+        </div>
+        <div class="camera-stage">
+          <img id="camera-rgb" src="/api/camera/rgb.mjpg" alt="D435 live RGB stream">
+          <div class="camera-crosshair" aria-hidden="true"><i></i><i></i></div>
+          <div class="camera-hud camera-hud-top">
+            <span id="camera-model">INTEL REALSENSE D435</span>
+            <span id="camera-resolution">-- × --</span>
+          </div>
+          <div id="camera-empty" class="camera-empty">
+            <strong>WAITING FOR D435 VIDEO</strong>
+            <span>Camera faults are isolated from robot control.</span>
+          </div>
+          <div class="depth-preview">
+            <div><span>DEPTH</span><strong id="depth-resolution">-- × --</strong></div>
+            <img id="camera-depth" src="/api/camera/depth.mjpg" alt="D435 colorized depth stream">
+          </div>
+        </div>
+        <div class="vr-mapping" aria-label="VR to robot mapping">
+          <div class="mapping-heading"><span>VR TO ROBOT MAPPING</span><strong id="mapping-anchor">ANCHOR --</strong></div>
+          <div class="mapping-flow">
+            <span>OPENXR LEFT WRIST</span><i>→</i><span>FRAME TRANSFORM</span><i>→</i><span>HITBOT TCP DELTA</span>
+          </div>
+          <div class="mapping-meta">
+            <span>SCALE <strong>0.70</strong></span>
+            <span>POSITION <strong>-X / Z / Y</strong></span>
+            <span id="mapping-reanchor">RE-ANCHOR ARMED</span>
+          </div>
+        </div>
+        <div class="source-note">
+          <span id="camera-reason">READ-ONLY VISION SOURCE</span>
+          <span>FRAME <strong id="camera-sequence">--</strong></span>
+        </div>
+      </article>
+
+      <article class="panel hitbot-panel">
+        <div class="panel-heading">
+          <div><span class="panel-index">04 / ARM</span><h2>HITBOT TRACKING</h2></div>
+          <span id="hitbot-mode" class="mode-tag">NO SOURCE</span>
+        </div>
+        <div class="arm-body">
+          <div class="arm-plots">
+            <div class="plot"><span class="plot-title">TOP XY</span><canvas id="arm-xy" aria-label="Top XY TCP tracking plot"></canvas></div>
+            <div class="plot"><span class="plot-title">SIDE XZ</span><canvas id="arm-xz" aria-label="Side XZ TCP tracking plot"></canvas></div>
+          </div>
+          <dl class="metric-stack arm-metrics">
+            <div><dt>TCP XYZ / MM</dt><dd id="hitbot-tcp">--</dd></div>
+            <div class="orientation-metric">
+              <dt>TCP RPY / DEG</dt><dd id="hitbot-rpy">--</dd>
+              <svg id="arm-orientation" viewBox="0 0 96 52" role="img" aria-label="Actual TCP orientation axes">
+                <circle cx="48" cy="27" r="2" class="orientation-origin"></circle>
+                <line id="orientation-x" x1="48" y1="27" x2="74" y2="27" class="orientation-x"></line>
+                <line id="orientation-y" x1="48" y1="27" x2="35" y2="38" class="orientation-y"></line>
+                <line id="orientation-z" x1="48" y1="27" x2="48" y2="5" class="orientation-z"></line>
+                <text id="orientation-x-label" x="78" y="30">X</text>
+                <text id="orientation-y-label" x="29" y="44">Y</text>
+                <text id="orientation-z-label" x="45" y="9">Z</text>
+              </svg>
+            </div>
+            <div><dt>IK</dt><dd id="hitbot-ik">--</dd></div>
+            <div><dt>HOLD</dt><dd id="hitbot-hold">TELEOP</dd></div>
+            <div><dt>HOLD ERROR</dt><dd id="hitbot-hold-error">--</dd></div>
+            <div><dt>SERVO</dt><dd id="hitbot-servo">-- ms</dd></div>
+            <div><dt>LATENCY</dt><dd id="hitbot-latency">-- ms</dd></div>
+          </dl>
+        </div>
+        <div class="control-coupling">
+          <div><span>VR WRIST</span><i>→</i><strong>HITBOT</strong></div>
+          <div><span>VR JOINTS</span><i>→</i><strong>LINKERHAND</strong></div>
+          <div><span>SINGLE INPUT CLOCK</span><strong id="coupling-rate">-- HZ</strong></div>
+        </div>
+        <div class="source-note"><span>TRACKING SAMPLE</span><strong id="hitbot-sequence">--</strong></div>
+      </article>
+    </section>
+
+    <section class="lower-grid" aria-label="Runtime transition and latency">
+      <article class="panel transition-panel">
+        <div class="compact-heading"><h2>CONTROL TRANSITION</h2><span id="runtime-owner">OWNER --</span></div>
+        <div id="mode-timeline" class="mode-timeline">
+          <div data-mode="teleop"><i></i><span>TELEOP</span></div>
+          <div data-mode="shadow"><i></i><span>SHADOW</span></div>
+          <div data-mode="blend"><i></i><span>BLEND</span></div>
+          <div data-mode="rl"><i></i><span>RL ACTIVE</span></div>
+        </div>
+        <p id="runtime-message" class="runtime-message">Waiting for runtime status.</p>
+      </article>
+
+      <article class="panel readiness-panel">
+        <span>READINESS</span><strong id="readiness-value">-- / --</strong><small id="history-value">HISTORY --</small>
+        <ul id="readiness-providers" aria-label="Readiness provider checklist"></ul>
+      </article>
+
+      <article class="panel latency-panel">
+        <div class="compact-heading"><h2>LIVE LATENCY</h2><span>LAST 10 SECONDS</span></div>
+        <div class="latency-plots">
+          <div><span>VR INPUT</span><canvas id="latency-openxr"></canvas><strong id="latency-openxr-value">--</strong></div>
+          <div><span>HAND</span><canvas id="latency-linker"></canvas><strong id="latency-linker-value">--</strong></div>
+          <div><span>ARM</span><canvas id="latency-hitbot"></canvas><strong id="latency-hitbot-value">--</strong></div>
+        </div>
+      </article>
+
+      <aside class="action-rail" aria-label="Operator actions">
+        <div id="switch-gate-status" class="switch-gate gate-disabled">RL SWITCH NOT AUTHORIZED</div>
+        <button id="confirm-action" class="action-confirm" type="button"><span>CONFIRM OPERATOR</span><kbd>CLICK</kbd></button>
+        <button id="switch-action" class="action-primary" type="button" disabled><span>RL SWITCH DISABLED</span><kbd>F12</kbd></button>
+        <button id="stop-action" class="action-stop" type="button"><span>SAFE STOP</span><kbd>ESC</kbd></button>
+      </aside>
+    </section>
+
+    <footer class="console-footer">
+      <span id="policy-name">POLICY --</span><span id="log-path">LOGS --</span><span id="snapshot-revision">REVISION 0</span>
+    </footer>
+  </main>
+</body>
+</html>

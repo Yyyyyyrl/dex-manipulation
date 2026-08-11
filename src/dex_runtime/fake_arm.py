@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class FakeArmHoldStatus:
+    connected: bool
     prepared: bool
     active: bool
     verified: bool
@@ -25,6 +26,7 @@ class FakeArmGateway:
     @property
     def status(self) -> FakeArmHoldStatus:
         return FakeArmHoldStatus(
+            True,
             self.prepared,
             self.hold_active,
             self.hold_verified,
@@ -61,3 +63,9 @@ class FakeArmGateway:
     def inject_fault(self, reason: str) -> None:
         self.fault_reason = reason
         self.hold_verified = False
+
+    def probe(self) -> bool:
+        return self.fault_reason is None
+
+    def close(self) -> None:
+        return None

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+import torch
 
 from dex_runtime.policy_package import validate_policy_package
 from dex_runtime.policy_session import PolicySession, PolicySessionState
@@ -98,3 +99,36 @@ def test_policy_session_rejects_duplicate_tick_and_wrong_cadence(tmp_path) -> No
     with pytest.raises(ValueError, match="cadence"):
         session.observe(value, value, tick=1, scheduled_time_ns=1_001, state_sequence=2)
     assert session.status.history_count == count
+
+
+def test_preview_preserves_manifest_limits_across_float32_boundary(tmp_path) -> None:
+    package = validate_policy_package(
+        write_test_package(tmp_path / "policy"), allow_unsigned_local=True
+    )
+    session = PolicySession(package)
+    with torch.no_grad():
+        for parameter in session.actor.parameters():
+            parameter.zero_()
+        session.actor.mu.bias.fill_(-1.0)
+
+    lower = list(CALIBRATION_LOWER)
+    session.reset(
+        lower,
+        lower,
+        control_session_id="session",
+        source_id="policy-session",
+        control_epoch=1,
+    )
+    for tick in range(session.codec.spec.history_length):
+        session.observe(
+            lower,
+            lower,
+            tick=tick,
+            scheduled_time_ns=1_000 + tick * session.codec.spec.control_period_ns,
+            state_sequence=tick + 1,
+        )
+
+    preview = session.preview()
+    assert preview.semantic_position == CALIBRATION_LOWER
+    assert session.last_inference is not None
+    assert session.last_inference.target == CALIBRATION_LOWER

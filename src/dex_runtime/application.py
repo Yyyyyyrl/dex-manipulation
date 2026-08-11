@@ -29,6 +29,7 @@ from .observability import ControlTraceRecorder, EventLogger, RuntimeEvent
 from .operator_switch import EvdevF12SwitchSource, OperatorSwitchEvent, is_toggle_request
 from .policy_session import PolicySession
 from .preflight import PreflightResult
+from .real_arm import RealArmGateway
 from .readiness import (
     GatewayHealthProvider,
     HandStateFreshnessProvider,
@@ -38,6 +39,7 @@ from .readiness import (
 )
 from .safety import HandGatewayBinding, HandSafetyLimits, HandSafetySupervisor
 from .status import RuntimeStatus, TerminalStatusRenderer
+from .telemetry import ControlLoopTelemetry
 
 
 class RuntimeGateway(Protocol):
@@ -74,6 +76,7 @@ class HandOnlyRuntime:
         *,
         monotonic_ns: Callable[[], int] = time.monotonic_ns,
         status_renderer: TerminalStatusRenderer | None = None,
+        arm_gateway=None,
     ) -> None:
         self.preflight = preflight
         self.binding: DeploymentBinding = preflight.binding
@@ -85,6 +88,28 @@ class HandOnlyRuntime:
         self.status_renderer = status_renderer or TerminalStatusRenderer(
             use_ansi=self.binding.status.use_ansi
         )
+        if arm_gateway is not None:
+            self.arm_gateway = arm_gateway
+        elif self.binding.arm.mode == "fake-hold":
+            self.arm_gateway = FakeArmGateway()
+        else:
+            arm = self.binding.arm
+            assert (
+                arm.control_host is not None
+                and arm.control_port is not None
+                and arm.request_timeout_s is not None
+                and arm.command_ttl_ns is not None
+                and arm.hold_lease_ns is not None
+            )
+            self.arm_gateway = RealArmGateway(
+                self.binding.control_session_id,
+                arm.control_host,
+                arm.control_port,
+                request_timeout_s=arm.request_timeout_s,
+                command_ttl_ns=arm.command_ttl_ns,
+                hold_lease_ns=arm.hold_lease_ns,
+                clock_ns=monotonic_ns,
+            )
         self.event_logger = EventLogger(self.binding.logging.events_path)
         self.trace_recorder = ControlTraceRecorder(
             self.binding.logging.trace_path,
@@ -103,10 +128,17 @@ class HandOnlyRuntime:
         self._compatibility = PolicyCompatibility(True, ())
         self._operator_id: str | None = None
         self._ticks = 0
+        self._telemetry_lock = threading.Lock()
+        self._latest_control_telemetry: ControlLoopTelemetry | None = None
 
     @property
     def supervisor(self) -> HandoffSupervisor | None:
         return self._supervisor
+
+    @property
+    def latest_control_telemetry(self) -> ControlLoopTelemetry | None:
+        with self._telemetry_lock:
+            return self._latest_control_telemetry
 
     def confirm_operator(self, operator_id: str) -> None:
         if not operator_id:
@@ -235,7 +267,7 @@ class HandOnlyRuntime:
                 self.binding.readiness.required_provider_ids,
             ),
             self.gateway,
-            FakeArmGateway(),
+            self.arm_gateway,
             safety,
         )
         initial_effective = EffectiveHandTarget(
@@ -305,7 +337,9 @@ class HandOnlyRuntime:
             hand_state = self.gateway.latest_state
             if manus_sample is not None and hand_state is not None:
                 return hand_state, manus_sample
-        raise TimeoutError("fresh initial Manus and hand state were not both available")
+        raise TimeoutError(
+            "fresh initial teleoperation input and hand state were not both available"
+        )
 
     def _render_status(self, readiness, result, manus_health: str) -> None:
         supervisor = self._supervisor
@@ -343,6 +377,15 @@ class HandOnlyRuntime:
             self.switch_source.start(self._on_switch)
             initial_state, latest_manus = self._wait_for_initial_inputs(initial_input_timeout_s)
             self._supervisor = self._build_supervisor(initial_state)
+            prepare_retargeter = getattr(self.retargeter, "prepare", None)
+            if prepare_retargeter is not None:
+                prepare_retargeter(
+                    latest_manus,
+                    control_session_id=self.binding.control_session_id,
+                    control_epoch=self._supervisor.hand_epoch,
+                    task_id=self.preflight.policy_package.descriptor.task_id,
+                    task_version=self.preflight.policy_package.descriptor.task_version,
+                )
             self._policy_session = PolicySession(self.preflight.policy_package)
             self._emit_event("runtime-start", state=self._supervisor.state.value)
             self._connected.set()
@@ -391,6 +434,7 @@ class HandOnlyRuntime:
                     teleop_candidate,
                     readiness,
                     scheduled_time_ns=scheduled_ns,
+                    actual_time_ns=actual_ns,
                 )
                 self._ticks += 1
 
@@ -469,6 +513,32 @@ class HandOnlyRuntime:
                     result.effective_target.semantic_position
                 )
                 session_trace = getattr(self._policy_session, "last_inference", None)
+                live_telemetry = ControlLoopTelemetry(
+                    tick=self._ticks - 1,
+                    actual_time_ns=actual_ns,
+                    scheduled_time_ns=scheduled_ns,
+                    lateness_ns=lateness_ns,
+                    control_period_ns=period_ns,
+                    state=self._supervisor.state.value,
+                    hand_owner=hand_owner,
+                    arm_owner=arm_owner,
+                    control_epoch=self._supervisor.hand_epoch,
+                    manus_sample=latest_manus,
+                    manus_source_status=source_status,
+                    teleop_candidate=teleop_candidate,
+                    policy_candidate=self._policy_session.last_preview,
+                    requested_candidate=self._supervisor.last_requested_candidate,
+                    hand_state=hand_state,
+                    authorized_command=authorized_command,
+                    gateway_acknowledgement=self._supervisor.last_gateway_acknowledgement,
+                    effective_target=result.effective_target,
+                    readiness=readiness,
+                    mapping_preview=mapping_preview,
+                    blend_alpha=result.blend_alpha,
+                    rejection_reason=result.rejection_reason,
+                )
+                with self._telemetry_lock:
+                    self._latest_control_telemetry = live_telemetry
                 self.trace_recorder.record(
                     monotonic_time_ns=actual_ns,
                     control_session_id=self.binding.control_session_id,
@@ -497,7 +567,7 @@ class HandOnlyRuntime:
                         "arbitration_result": result,
                         "effective_target": result.effective_target,
                         "readiness": readiness,
-                        "fake_arm_hold": self._supervisor.arm_gateway.status,
+                        "arm_hold": self._supervisor.arm_gateway.status,
                         "mapping_preview": mapping_preview,
                         "scheduler": {
                             "scheduled_time_ns": scheduled_ns,
@@ -542,6 +612,10 @@ class HandOnlyRuntime:
                 component.stop()
             except BaseException:
                 pass
+        try:
+            self.arm_gateway.close()
+        except BaseException:
+            pass
         self.status_renderer.close()
         self.trace_recorder.close()
         self.event_logger.close()

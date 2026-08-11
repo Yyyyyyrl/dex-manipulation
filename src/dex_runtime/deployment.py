@@ -165,6 +165,16 @@ class StatusBinding:
 
 
 @dataclass(frozen=True)
+class ArmRuntimeBinding:
+    mode: str
+    control_host: str | None
+    control_port: int | None
+    request_timeout_s: float | None
+    command_ttl_ns: int | None
+    hold_lease_ns: int | None
+
+
+@dataclass(frozen=True)
 class DeploymentBinding:
     source_path: Path
     format_version: int
@@ -182,7 +192,11 @@ class DeploymentBinding:
     switch: SwitchBinding
     logging: LoggingBinding
     status: StatusBinding
-    arm_mode: str
+    arm: ArmRuntimeBinding
+
+    @property
+    def arm_mode(self) -> str:
+        return self.arm.mode
 
     @classmethod
     def load(cls, path: str | Path) -> "DeploymentBinding":
@@ -509,9 +523,39 @@ class DeploymentBinding:
             status_raw["use_ansi"],
         )
         arm_raw = _object(raw["arm"], "arm")
-        _exact(arm_raw, {"mode"}, "arm")
-        if arm_raw["mode"] != "fake-hold":
-            raise DeploymentBindingError("arm-vendor work is deferred; arm mode must be fake-hold")
+        arm_mode = _text(arm_raw.get("mode"), "arm.mode")
+        if arm_mode == "fake-hold":
+            _exact(arm_raw, {"mode"}, "arm")
+            arm = ArmRuntimeBinding("fake-hold", None, None, None, None, None)
+        elif arm_mode == "hitbot-hold-v1":
+            _exact(
+                arm_raw,
+                {
+                    "mode",
+                    "control_host",
+                    "control_port",
+                    "request_timeout_s",
+                    "command_ttl_ns",
+                    "hold_lease_ns",
+                },
+                "arm",
+            )
+            host = _text(arm_raw["control_host"], "arm.control_host")
+            if host not in ("127.0.0.1", "localhost"):
+                raise DeploymentBindingError("Hitbot hold control must use loopback")
+            port = _positive_int(arm_raw["control_port"], "arm.control_port")
+            if port > 65535:
+                raise DeploymentBindingError("arm.control_port must be within 1..65535")
+            arm = ArmRuntimeBinding(
+                arm_mode,
+                host,
+                port,
+                _positive_float(arm_raw["request_timeout_s"], "arm.request_timeout_s"),
+                _positive_int(arm_raw["command_ttl_ns"], "arm.command_ttl_ns"),
+                _positive_int(arm_raw["hold_lease_ns"], "arm.hold_lease_ns"),
+            )
+        else:
+            raise DeploymentBindingError(f"unsupported arm mode: {arm_mode}")
 
         return cls(
             source,
@@ -530,5 +574,5 @@ class DeploymentBinding:
             switch,
             logging,
             status,
-            "fake-hold",
+            arm,
         )

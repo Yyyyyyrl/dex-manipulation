@@ -164,11 +164,21 @@ class PolicySession:
 
         transform = package.manifest["action_transform"]
         self._delta_scale = float(transform["delta_scale_rad"])
+        # Keep the manifest's Python-float limits as the canonical values used
+        # at the policy/safety boundary. The actor runs in float32, where a
+        # value such as -0.17 can round a few nanoradians outside the manifest
+        # limit even after torch.clamp.
+        self._position_lower = tuple(
+            float(value) for value in transform["position_lower_rad"]
+        )
+        self._position_upper = tuple(
+            float(value) for value in transform["position_upper_rad"]
+        )
         self._lower = torch.tensor(
-            transform["position_lower_rad"], dtype=torch.float32, device=self.device
+            self._position_lower, dtype=torch.float32, device=self.device
         ).reshape(1, -1)
         self._upper = torch.tensor(
-            transform["position_upper_rad"], dtype=torch.float32, device=self.device
+            self._position_upper, dtype=torch.float32, device=self.device
         ).reshape(1, -1)
         task = package.manifest["task"]
         hand = package.manifest["hand"]
@@ -226,8 +236,17 @@ class PolicySession:
             raise ValueError(f"{label} must contain finite canonical semantic joints")
         return tensor
 
+    # Effective targets are read back from quantized hardware (integer native
+    # slots) and blended in float, so a target that sits on an action bound can
+    # land a fraction of a native step outside it.  Admit that measurement noise:
+    # the action clamp below stays exact and the HandSafetySupervisor still
+    # enforces the deployment limits on every command.
+    _LIMIT_TOLERANCE_RAD = 0.02
+
     def _require_target_within_limits(self, target: torch.Tensor) -> None:
-        if bool(((target < self._lower) | (target > self._upper)).any()):
+        low = self._lower - self._LIMIT_TOLERANCE_RAD
+        high = self._upper + self._LIMIT_TOLERANCE_RAD
+        if bool(((target < low) | (target > high)).any()):
             raise ValueError("effective target lies outside package action limits")
 
     def reset(
@@ -346,6 +365,12 @@ class PolicySession:
             self._lower,
             self._upper,
         )
+        target_values = tuple(
+            min(max(float(value), lower), upper)
+            for value, lower, upper in zip(
+                target[0].tolist(), self._position_lower, self._position_upper
+            )
+        )
         maximum = float(action.abs().max().item())
         if not math.isfinite(maximum):
             raise RuntimeError("policy produced a non-finite action")
@@ -356,11 +381,11 @@ class PolicySession:
             codec_input=tuple(float(value) for value in actor_input[0].tolist()),
             latent=tuple(float(value) for value in latent[0].tolist()),
             action=tuple(float(value) for value in action[0].tolist()),
-            target=tuple(float(value) for value in target[0].tolist()),
+            target=target_values,
         )
         candidate = PolicyHandCandidate(
             identity=self._identity(),
-            semantic_position=tuple(float(value) for value in target[0].tolist()),
+            semantic_position=target_values,
             generated_time_ns=self._latest_scheduled_ns,
             valid_until_ns=self._latest_scheduled_ns + self.codec.spec.control_period_ns,
             source_state_sequence=self._latest_state_sequence,

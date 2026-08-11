@@ -118,7 +118,15 @@ class HandSafetySupervisor:
             reasons.append("hand-state-schema-mismatch")
         if hand_state.identity.calibration_id != self.binding.calibration_id:
             reasons.append("hand-state-calibration-mismatch")
-        if not candidate.valid_at(now_ns):
+        # Candidate timestamps come from the actual source callback clock, while
+        # authorization is scheduled against the nominal control tick. Accept
+        # bounded intra-period arrival skew, but reject genuinely future data.
+        future_skew_ns = candidate.generated_time_ns - now_ns
+        candidate_validation_ns = max(now_ns, candidate.generated_time_ns)
+        if (
+            future_skew_ns > control_period_ns
+            or not candidate.valid_at(candidate_validation_ns)
+        ):
             reasons.append("candidate-expired")
         if now_ns - hand_state.acquisition_time_ns > self.limits.maximum_state_age_ns:
             reasons.append("hand-state-stale")

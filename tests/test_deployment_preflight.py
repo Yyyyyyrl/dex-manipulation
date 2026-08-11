@@ -148,6 +148,29 @@ def test_binding_rejects_unconfirmed_switch_and_missing_fields(tmp_path) -> None
         DeploymentBinding.load(config)
 
 
+def test_binding_accepts_only_loopback_identity_bound_hitbot_hold(tmp_path) -> None:
+    package = write_test_package(tmp_path / "store" / "policy")
+    config = _write_config(tmp_path, package)
+    raw = json.loads(config.read_text())
+    raw["arm"] = {
+        "mode": "hitbot-hold-v1",
+        "control_host": "127.0.0.1",
+        "control_port": 8781,
+        "request_timeout_s": 0.35,
+        "command_ttl_ns": 500_000_000,
+        "hold_lease_ns": 1_000_000_000,
+    }
+    config.write_text(json.dumps(raw))
+    binding = DeploymentBinding.load(config)
+    assert binding.arm_mode == "hitbot-hold-v1"
+    assert binding.arm.control_port == 8781
+
+    raw["arm"]["control_host"] = "0.0.0.0"
+    config.write_text(json.dumps(raw))
+    with pytest.raises(DeploymentBindingError, match="loopback"):
+        DeploymentBinding.load(config)
+
+
 def test_cli_preflight_and_package_trust_are_explicit(tmp_path, capsys) -> None:
     package = write_test_package(tmp_path / "store" / "policy")
     config = _write_config(tmp_path, package)

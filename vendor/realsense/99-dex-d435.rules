@@ -1,0 +1,4 @@
+# Scoped D435 rule extracted from librealsense v2.58.3, commit
+# dfd6aa91250f5c31521d72d627865417989bb4e7:
+# config/99-realsense-libusb.rules (Apache-2.0).
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="8086", ATTRS{idProduct}=="0b07", MODE:="0666", GROUP:="plugdev"
