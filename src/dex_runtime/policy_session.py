@@ -101,10 +101,29 @@ class RuntimeAdapter(nn.Module):
 
 
 class PolicySessionState(str, Enum):
+    """Lifecycle of a loaded policy.
+
+        LOADED --reset--> SHADOW --activate--> ACTIVE
+                            ^                    |
+                            |                deactivate
+                            +---- reset ---- DEACTIVATED --close--> CLOSED
+
+    The important property is that inference happens in SHADOW, not just in
+    ACTIVE. The policy observes and previews targets while teleoperation still
+    owns the hand, so by the time it is activated its history is full and its
+    first commanded target continues from the target already in effect. That is
+    what makes the switch bumpless.
+    """
+
+    #: Weights loaded onto the device; no history, cannot infer.
     LOADED = "loaded"
+    #: Observing and previewing, commanding nothing. Entered via `reset`.
     SHADOW = "shadow"
+    #: Owns the hand. Entered via `activate`, which requires a full history.
     ACTIVE = "active"
+    #: Handed back; retains weights so it can be `reset` into SHADOW again.
     DEACTIVATED = "deactivated"
+    #: Terminal.
     CLOSED = "closed"
 
 
@@ -296,6 +315,16 @@ class PolicySession:
         scheduled_time_ns: int,
         state_sequence: int,
     ) -> None:
+        """Append one observation frame to the history ring buffer.
+
+        Valid in SHADOW and ACTIVE. Enforces that ticks are consecutive, that
+        the gap between observations matches the cadence the package declares,
+        and that the hand state sequence strictly increases. These are hard
+        errors rather than warnings because the temporal convolution over the
+        history assumes a uniformly sampled window: quietly feeding it a skipped
+        or repeated tick changes what the policy sees without any signal that it
+        happened.
+        """
         if self._state not in (PolicySessionState.SHADOW, PolicySessionState.ACTIVE):
             raise RuntimeError("policy observation requires shadow or active state")
         if tick < 0 or scheduled_time_ns < 0 or state_sequence < 0:
@@ -345,6 +374,24 @@ class PolicySession:
 
     @torch.no_grad()
     def preview(self) -> PolicyHandCandidate:
+        """Run inference for the current tick and return the candidate target.
+
+        Pure with respect to the session: it commands nothing, and calling it
+        twice on the same tick returns the cached result rather than re-running
+        the networks. That is what lets the supervisor evaluate a policy target
+        through the safety supervisor in SHADOW, and record what the policy
+        *would* have done, without giving it the hand.
+
+        The chain is: assemble the actor input from the history, compress the
+        history to a latent through the adapter, run the actor, clamp the action
+        to [-1, 1], scale it by the package's `delta_scale_rad`, add it to the
+        current effective target, and clamp to the package position limits.
+        Actions are deltas on the acknowledged effective target, not absolute
+        positions, so a dropped acknowledgement cannot make the policy chase a
+        target the hand never reached.
+
+        Raises if the history is not yet full; callers should stay in SHADOW.
+        """
         if self._state not in (PolicySessionState.SHADOW, PolicySessionState.ACTIVE):
             raise RuntimeError("policy preview requires shadow or active state")
         if self._history_count < self.codec.spec.history_length:
@@ -403,6 +450,14 @@ class PolicySession:
         return candidate
 
     def activate(self, *, tick: int, control_epoch: int) -> PolicyHandCandidate:
+        """Promote SHADOW to ACTIVE and return the candidate that takes effect.
+
+        Requires a preview already computed for this same `tick`: the command
+        that hands the policy the hand is the exact one the supervisor just
+        evaluated, not a fresh inference that could differ. `control_epoch` must
+        strictly increase, which is what lets the gateway reject any in-flight
+        command still carrying the previous owner's epoch.
+        """
         if self._state is not PolicySessionState.SHADOW:
             raise RuntimeError("only a shadow policy session can activate")
         if self._cached_tick != tick or self._cached_preview is None:

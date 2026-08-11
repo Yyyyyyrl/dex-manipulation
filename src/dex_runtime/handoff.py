@@ -33,12 +33,31 @@ class _Ticket(Protocol):
 
 
 class HandGateway(Protocol):
+    """The exclusive owner of the hand command path.
+
+    Ownership is two-phase: `prepare_ownership` reserves the resource without
+    actuating, and `commit_ownership` makes the reservation live. The supervisor
+    only ever holds one preparation at a time, so a rejected transition cannot
+    leave the gateway half-owned.
+    """
+
     def prepare_ownership(self, ownership: OwnershipState): ...
     def commit_ownership(self, preparation) -> None: ...
     def submit(self, command) -> _Ticket: ...
 
 
 class ArmGateway(Protocol):
+    """The arm-side hold interface the hand handoff is sequenced against.
+
+    The hand may only be given to the policy while the arm is verifiably holding
+    still, so the arm calls are ordered `prepare_hold` -> `enter_hold` ->
+    `verify_hold`, and unwound with `reanchor_teleop` -> `release_to_teleop`.
+    `verify_hold` returns False until the arm has actually settled, which is why
+    ARM_HOLD_VERIFY is a state the supervisor can dwell in rather than a
+    one-shot call. Implemented by both FakeArmGateway and RealArmGateway so the
+    state machine runs identically with and without hardware.
+    """
+
     @property
     def status(self): ...
     def prepare_hold(self) -> None: ...
@@ -49,18 +68,48 @@ class ArmGateway(Protocol):
 
 
 class HandoffState(str, Enum):
+    """States of the teleop <-> policy handoff.
+
+    The nominal round trip is:
+
+        TELEOP_ACTIVE -> POLICY_PREFLIGHT -> RL_SHADOW
+          -> ARM_HOLD_PREPARE -> ARM_HOLD_VERIFY -> HAND_BLEND -> RL_ACTIVE
+          -> HAND_BACK_PREPARE -> HAND_BACK_BLEND -> ARM_TELEOP_REANCHOR
+          -> TELEOP_ACTIVE
+
+    Every forward step past RL_SHADOW is gated: on readiness evidence, on the
+    policy having a full observation history, and on the arm reporting a
+    verified hold. Any gate failing, or any safety rejection, falls back to
+    SAFE_HOLD rather than continuing.
+    """
+
+    #: No operator source yet; nothing is being commanded.
     DISCONNECTED = "DISCONNECTED"
+    #: Fallback after a rejection or lost gate. The last safe target is held.
     SAFE_HOLD = "SAFE_HOLD"
+    #: Operator owns the hand. The steady state, and the state we fail back to.
     TELEOP_ACTIVE = "TELEOP_ACTIVE"
+    #: Policy loaded and compatibility proven, not yet observing.
     POLICY_PREFLIGHT = "POLICY_PREFLIGHT"
+    #: Policy runs read-only alongside teleop, filling its observation history.
+    #: It commands nothing here; this is what makes the later switch bumpless.
     RL_SHADOW = "RL_SHADOW"
+    #: Asking the arm to stop moving, before the hand changes owner.
     ARM_HOLD_PREPARE = "ARM_HOLD_PREPARE"
+    #: Waiting for the arm to report a *verified* hold. May last several ticks.
     ARM_HOLD_VERIFY = "ARM_HOLD_VERIFY"
+    #: Interpolating hand targets from the teleop target to the policy target.
     HAND_BLEND = "HAND_BLEND"
+    #: Policy owns the hand; the arm stays held.
     RL_ACTIVE = "RL_ACTIVE"
+    #: Hand-back requested; policy is being wound down.
     HAND_BACK_PREPARE = "HAND_BACK_PREPARE"
+    #: Interpolating back from the policy target to the live teleop target.
     HAND_BACK_BLEND = "HAND_BACK_BLEND"
+    #: Re-anchoring the operator's frame to where the arm actually is, so
+    #: returning control does not command a jump.
     ARM_TELEOP_REANCHOR = "ARM_TELEOP_REANCHOR"
+    #: Terminal. Only an operator may clear it.
     ESTOP = "ESTOP"
 
 

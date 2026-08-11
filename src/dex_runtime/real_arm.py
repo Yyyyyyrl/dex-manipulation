@@ -1,4 +1,34 @@
-"""Loopback client for the single-owner dex_teleop Hitbot hold controller."""
+"""Loopback client for the single-owner dex_teleop Hitbot hold controller.
+
+This module never touches the Hitbot SDK. `tools/vr_hitbot_controller.py` is the
+only process permitted to own the arm; this is a client that asks it to hold
+still and reports whether it actually did. Keeping the SDK in one process is
+what prevents two owners issuing conflicting motion.
+
+Wire protocol
+-------------
+JSON datagrams over UDP, bound to loopback only (enforced at construction: a
+non-loopback address is refused, not warned about). Every request carries
+`schema_version` (`ARM_HOLD_SCHEMA_VERSION`), a fresh `command_id`, and the
+`control_session_id`/`control_epoch` of the requester; every response echoes
+them. A reply whose identity does not match the outstanding request is
+discarded rather than applied, so a late response to a superseded command
+cannot be mistaken for the current one.
+
+Hold lease
+----------
+The controller's states are TELEOP -> PREPARED -> HOLDING -> VERIFIED, unwound
+through REANCHOR_ACKED, with FAULT_HOLD as the absorbing failure state. The
+hold is a lease, not a latch: the owner expects to keep hearing from this
+client, and a missing heartbeat drops it into FAULT_HOLD, from which it does not
+resume on its own. That bias is deliberate. If this process dies while the
+policy has the hand, the arm stops rather than continuing to hold a target
+nobody is supervising.
+
+`verify_hold` returns False until the controller reports the arm has settled
+within its position and orientation tolerance, which is why the supervisor
+dwells in ARM_HOLD_VERIFY instead of assuming the hold took effect.
+"""
 
 from __future__ import annotations
 

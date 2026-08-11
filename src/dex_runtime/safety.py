@@ -21,12 +21,33 @@ from dex_contracts import (
 
 @dataclass(frozen=True)
 class HandSafetyLimits:
+    """Deployment-owned envelope every hand command is checked against.
+
+    These are runtime limits, deliberately independent of whatever bounds a
+    policy package declares: a package can only ever be more conservative than
+    the deployment, never less. All angles are semantic joint radians in the
+    order given by the calibration's semantic schema.
+    """
+
+    #: Per-joint lower bound, radians. Length defines the semantic width, and
+    #: any candidate of a different width is rejected outright.
     position_lower_rad: tuple[float, ...]
+    #: Per-joint upper bound, radians. Must exceed the lower bound.
     position_upper_rad: tuple[float, ...]
+    #: Largest movement of any single joint between consecutive commands, rad.
     maximum_delta_per_tick_rad: float
+    #: Same bound expressed as a velocity, rad/s. The effective per-tick cap is
+    #: the smaller of this scaled by the control period and the field above, so
+    #: shortening the control period tightens the step automatically.
     maximum_target_rate_rad_s: float
+    #: Largest tolerated gap between commanded target and measured position,
+    #: rad. Catches a hand that is jammed, unpowered, or fighting the command.
     maximum_following_error_rad: float
+    #: Oldest hand state that may still justify a command, nanoseconds.
     maximum_state_age_ns: int
+    #: How long an authorized command stays valid, nanoseconds. Should not
+    #: outlive one control period, or a stale command could supersede a newer
+    #: one at the gateway.
     command_deadline_ns: int
 
     def __post_init__(self) -> None:
@@ -54,6 +75,14 @@ class HandSafetyLimits:
 
 @dataclass(frozen=True)
 class HandGatewayBinding:
+    """The identity every command and every input must agree on.
+
+    Proven once during preflight and then held fixed for the session. Each
+    field is compared against the incoming candidate and hand state, so a
+    mismatch (wrong hand, stale calibration, a candidate from a previous
+    session) is a rejection rather than a silently mis-actuated command.
+    """
+
     control_session_id: str
     command_source_id: str
     hand_model: str
@@ -87,6 +116,23 @@ class HandSafetySupervisor:
         now_ns: int,
         control_period_ns: int,
     ) -> HandSafetyDecision:
+        """Check a candidate without authorizing it, returning every reason it fails.
+
+        Deliberately collects all reason codes instead of returning on the first
+        one, so an operator sees the whole picture in the trace rather than
+        fixing faults one restart at a time. The codes fall into five groups:
+
+        - shape:    ``semantic-width-mismatch``, ``non-finite-hand-vector``
+        - identity: ``*-mismatch`` for hand model/side/schema/session/task/
+                    package/calibration, on both the candidate and the hand state
+        - freshness: ``candidate-expired``, ``hand-state-stale``
+        - health:   ``hand-state-unhealthy`` (not fresh, faulted, or missing joints)
+        - envelope: ``position-limit:<joint index>``, ``target-delta-limit``,
+                    ``following-error-limit``
+
+        A width mismatch returns immediately, because every later check indexes
+        the vectors and would raise instead of reporting.
+        """
         reasons: list[str] = []
         target = candidate.semantic_position
         measured = hand_state.semantic_position
@@ -175,6 +221,17 @@ class HandSafetySupervisor:
         now_ns: int,
         control_period_ns: int,
     ) -> AuthorizedHandCommand:
+        """Evaluate a candidate and, if it passes, stamp it as an authorized command.
+
+        This is the only way a command reaches a gateway. The returned command
+        carries the session-fixed identity, the supervisor's `control_epoch`
+        (so a gateway can reject anything issued by a superseded owner), a fresh
+        `command_id`, and a deadline `command_deadline_ns` in the future.
+
+        Raises ValueError listing every reason code when the candidate fails;
+        callers are expected to treat that as a fall-back-to-safe-hold signal,
+        not to retry the same candidate.
+        """
         decision = self.evaluate(
             candidate,
             hand_state,

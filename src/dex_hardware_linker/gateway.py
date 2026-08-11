@@ -1,4 +1,24 @@
-"""Exclusive, epoch-enforcing Linker gateway running on a dedicated thread."""
+"""Exclusive, epoch-enforcing Linker gateway running on a dedicated thread.
+
+The single CAN owner. Every hand command in the system funnels through here,
+including the ones issued by the demo and console tools, so there is exactly one
+place that can move the hand and exactly one place to audit.
+
+Exclusivity is structural, not conventional: the transport is only ever touched
+from this gateway's own thread, and callers hand work over through a queue.
+That is why the LinkerHand ROS SDK is never run alongside the runtime, and why
+`tools/vr_hitbot_controller.py` owns the arm in a separate process rather than
+this one growing arm support.
+
+Ownership is two-phase. `prepare_ownership` validates and reserves without
+actuating; `commit_ownership` makes it live. A transition that fails its gates
+between the two simply drops the preparation, so a rejected handoff cannot
+leave the gateway believing a new owner is in charge.
+
+Every command carries a `control_epoch`. The gateway rejects any command whose
+epoch is not the current owner's, which is what makes an in-flight command from
+a superseded owner harmless rather than a race.
+"""
 
 from __future__ import annotations
 

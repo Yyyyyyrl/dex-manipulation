@@ -22,9 +22,22 @@ def _finite_vector(values: tuple[float, ...], label: str) -> None:
 
 @dataclass(frozen=True)
 class EffectiveHandTarget:
+    """The target the hardware is believed to be tracking, and the evidence for it.
+
+    Distinct from "the last target we sent". Policy actions are deltas on this
+    value, so it must reflect what was actually acknowledged rather than what
+    was merely queued; otherwise a dropped command would make the policy
+    integrate from a position the hand never reached.
+    """
+
+    #: Semantic joint angles in radians, ordered by the calibration's schema.
     semantic_position: tuple[float, ...]
+    #: The command this target came from, for correlating with traces.
     command_id: str
+    #: How strong the evidence is. `sent-to-bus` means only that the frame left
+    #: the host; it is not confirmation the hand moved.
     evidence_level: AcknowledgementLevel
+    #: Monotonic time the evidence was obtained, nanoseconds.
     evidence_time_ns: int
 
     def __post_init__(self) -> None:
@@ -35,17 +48,40 @@ class EffectiveHandTarget:
 
 @dataclass(frozen=True)
 class HandState:
+    """One measurement of the hand, in semantic joint space.
+
+    Produced by the hardware gateway after mapping native slot values through
+    the calibration. Everything above the gateway reasons in these units and
+    never sees CAN slots or raw counts.
+    """
+
+    #: Session, hand, schema, and calibration this measurement belongs to.
+    #: Checked against the safety binding so a mismatched hand is a rejection.
     identity: MessageIdentity
+    #: Measured joint angles in radians, ordered by the calibration's schema.
     semantic_position: tuple[float, ...]
+    #: Radians/second, when the hardware reports it.
     semantic_velocity: tuple[float, ...] | None
+    #: Per-joint effort in hardware-defined units, when reported.
     semantic_effort: tuple[float, ...] | None
+    #: Monotonic time the measurement was taken, nanoseconds. Age is measured
+    #: from here, so it must be the acquisition instant, not the decode instant.
     acquisition_time_ns: int
+    #: Opaque reference to the native frame, for trace correlation.
     raw_native_state_ref: str | None
+    #: "fresh" or a degraded label. Anything other than "fresh" blocks commands.
     state_quality: str
+    #: Per-joint; True where the hardware did not report a value. Same length as
+    #: `semantic_position`. Any True blocks commands.
     missing_joint_mask: tuple[bool, ...]
+    #: Hardware fault labels. Non-empty blocks commands.
     hardware_faults: tuple[str, ...]
+    #: Per-joint temperature in Celsius, when reported.
     temperatures_c: tuple[float, ...] | None
+    #: The target the hand is tracking; None before the first acknowledgement.
     last_effective_target: EffectiveHandTarget | None
+    #: The strongest evidence this hardware can supply. A hand that can only
+    #: confirm `sent-to-bus` cannot support policies that demand more.
     acknowledgement_capability: AcknowledgementLevel
 
     def __post_init__(self) -> None:
