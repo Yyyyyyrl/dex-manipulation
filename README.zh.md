@@ -46,7 +46,7 @@ python tools/switch_web_demo.py --transport fake --policy synthetic \
 | [硬件接口](docs/interfaces/hardware.md) | 接入新的手或机械臂（英文） |
 | [工具说明](docs/tools.md) | `tools/` 下每个脚本的用途（英文） |
 | [操作手册](docs/operator-runbook.md) | **一切涉及真实硬件的操作以此为准**（英文） |
-| [实现进度](docs/implementation-progress.md) | 交付状态与未完成的物理放行门（英文） |
+| [冻结决策](docs/frozen-decisions.md) | 冻结的硬件与格式决策，及产物溯源（英文） |
 
 ## 命令行
 
@@ -80,8 +80,10 @@ dex-runtime verify-package PACKAGE [--allow-unsigned-local]
 - **M2** — 精确的策略编解码、持续 shadow、假臂交接、混合过渡与交还
 - **M3** — JSONL 事件与轨迹、终端状态显示、F12 PCsensor 切换
 
-感知、多进程、回放，以及真实策略的机械臂控制仍处于推迟或门禁状态，记录在
-[docs/implementation-progress.md](docs/implementation-progress.md)。
+感知只供操作员界面、绝不喂给策略；多进程、回放，以及真实策略的机械臂控制仍处于
+推迟或由 `--enable-rl-switch` 门禁的状态。可放行范围以
+[docs/operator-runbook.md](docs/operator-runbook.md) 为准（英文），不可变更的部分
+记录在 [docs/frozen-decisions.md](docs/frozen-decisions.md)（英文）。
 
 ## 开发
 

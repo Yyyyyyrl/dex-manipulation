@@ -50,7 +50,7 @@ Full walkthrough in [docs/onboarding.md](docs/onboarding.md).
 | [Hardware interface](docs/interfaces/hardware.md) | Adding a hand or an arm |
 | [Tools](docs/tools.md) | What every script in `tools/` is for |
 | [Operator runbook](docs/operator-runbook.md) | **The authority for anything touching real hardware** |
-| [Implementation progress](docs/implementation-progress.md) | Delivery status and open physical release gates |
+| [Frozen decisions](docs/frozen-decisions.md) | Frozen hardware/format decisions and artifact provenance |
 
 ## CLI
 
@@ -87,9 +87,11 @@ path:
 - **M2** — exact policy codecs, continuous shadow, fake-arm handoff, blend, hand-back
 - **M3** — JSONL events and traces, terminal status, F12 PCsensor switching
 
-Perception, multi-process operation, replay, and real-policy arm control remain
-deferred or gated, as recorded in
-[docs/implementation-progress.md](docs/implementation-progress.md).
+Perception feeds operator surfaces only and never the policy; multi-process
+operation, replay, and real-policy arm control remain deferred or gated behind
+`--enable-rl-switch`. [docs/operator-runbook.md](docs/operator-runbook.md) is the
+authority on what is releasable; [docs/frozen-decisions.md](docs/frozen-decisions.md)
+records what cannot change.
 
 ## Development
 

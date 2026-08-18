@@ -1,7 +1,7 @@
 # Hand-only operator runbook and teleop-only rollback
 
 This runbook covers only the adopted M0-M3 hand-only path. The current checkout
-has not passed the physical release gates listed in `implementation-progress.md`.
+has not passed the physical release gates in Preconditions below.
 Do not use it for a live hand until the deployment binding, E-stop, OpenXR,
 PCsensor, CAN, and task-specific HIL checks are confirmed.
 
