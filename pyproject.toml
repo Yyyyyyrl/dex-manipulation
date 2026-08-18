@@ -84,10 +84,10 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-# The console entrypoints support both `python tools/switch_web_demo.py` and
-# `python -m tools.switch_web_demo`, so a try/except import block necessarily
+# The console entrypoints support both `python tools/run_console.py` and
+# `python -m tools.run_console`, so a try/except import block necessarily
 # precedes the remaining module-level imports.
-"tools/switch_web_demo.py" = ["E402"]
+"tools/run_console.py" = ["E402"]
 
 [tool.ruff.lint.isort]
 known-first-party = [

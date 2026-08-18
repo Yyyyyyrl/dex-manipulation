@@ -254,7 +254,8 @@ stateDiagram-v2
 |---|---|
 | `protocols.py` | `TeleopSource` / `Retargeter` 结构化契约 |
 | `manus.py` | Manus 手套数据源（ROS 2），25 节点原生布局 |
-| `openxr.py` | Quest 3S / WiVRn 数据源与重定向器，26 关节布局 |
+| `openxr.py` | Quest 3S / WiVRn 关键点与 DexPilot 重定向器，26 关节布局 |
+| `openxr_udp.py` | `UdpOpenXRSource`：OpenXR 桥接进程 loopback 分发的接收端 |
 | `retargeting.py` | Manus DexPilot 重定向器 |
 | `manus_math.py` | Manus → MANO 转换（文件内为中文注释） |
 | `hand_frame.py` | 用 SVD 拟合平面估计腕部坐标系 |

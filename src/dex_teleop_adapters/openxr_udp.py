@@ -1,4 +1,10 @@
-"""Validated latest-value OpenXR hand source for control and visualization."""
+"""Validated latest-value OpenXR hand source over a loopback UDP bridge.
+
+The OpenXR runtime is owned by a separate bridge process (see
+``tools/openxr_hand_bridge.py``), which fans frames out over loopback UDP so the
+hand and the arm consume the same immutable Quest frame without opening OpenXR
+twice. This source is the consumer side: it opens a socket, never an SDK.
+"""
 
 from __future__ import annotations
 
@@ -11,7 +17,8 @@ from collections import deque
 from collections.abc import Callable, Mapping
 
 from dex_contracts import SourceHealth, TimestampedSample
-from dex_teleop_adapters import (
+
+from .openxr import (
     OPENXR_JOINT_NAMES,
     OPENXR_LAYOUT_ID,
     OPENXR_PARENT_IDS,

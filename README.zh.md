@@ -26,7 +26,7 @@ source .venv/bin/activate
 python -m tools.control_console.soak_verify --duration-s 30 --viewer-count 1
 
 # 或者打开界面看：http://127.0.0.1:8765/
-python tools/switch_web_demo.py --transport fake --policy synthetic \
+python tools/run_console.py --transport fake --policy synthetic \
     --vr fake --vr-python .venv/bin/python --arm-telemetry fake --camera fake
 ```
 

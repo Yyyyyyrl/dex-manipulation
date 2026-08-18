@@ -64,7 +64,7 @@ python -m tools.control_console.soak_verify --duration-s 30 --viewer-count 1
 如果想直接看界面而不是看数据，直接启动控制台并打开 <http://127.0.0.1:8765/>：
 
 ```bash
-python tools/switch_web_demo.py --transport fake --policy synthetic \
+python tools/run_console.py --transport fake --policy synthetic \
     --vr fake --vr-python .venv/bin/python --arm-telemetry fake --camera fake
 ```
 

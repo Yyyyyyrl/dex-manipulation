@@ -37,7 +37,7 @@ def build_fake_command(
 ) -> list[str]:
     return [
         python,
-        str(repo_root / "tools" / "switch_web_demo.py"),
+        str(repo_root / "tools" / "run_console.py"),
         "--transport",
         "fake",
         "--policy",

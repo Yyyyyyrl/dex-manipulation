@@ -285,7 +285,8 @@ owner, always.
 |---|---|
 | `protocols.py` | `TeleopSource` / `Retargeter` structural contracts |
 | `manus.py` | Manus glove source (ROS 2), 25-node native layout |
-| `openxr.py` | Quest 3S / WiVRn source and retargeter, 26-joint layout |
+| `openxr.py` | Quest 3S / WiVRn keypoints and DexPilot retargeter, 26-joint layout |
+| `openxr_udp.py` | `UdpOpenXRSource`: loopback receiver for the OpenXR bridge fanout |
 | `retargeting.py` | Manus DexPilot retargeter |
 | `manus_math.py` | Manus → MANO conversion (documented in Chinese) |
 | `hand_frame.py` | Wrist frame estimation by SVD plane fit |

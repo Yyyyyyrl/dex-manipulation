@@ -355,7 +355,7 @@ if (( ENABLE_RL_SWITCH == 1 )); then
 fi
 (
   cd "$REPO_ROOT"
-  exec setsid "$UI_PYTHON" tools/switch_web_demo.py \
+  exec setsid "$UI_PYTHON" tools/run_console.py \
     --transport hand \
     --policy synthetic \
     --vr real \

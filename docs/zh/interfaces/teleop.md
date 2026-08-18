@@ -132,6 +132,22 @@ profile 把「设备 + 手」这一组合中所有不允许漂移的东西钉死
    校验左右手、布局、序号与陈旧性。这里的惯例是 golden trace 对比，冻结的轨迹在
    `assets/golden/`。
 
-有两件事你**不需要**做：不需要在任何地方注册设备（composition 里显式接线），
-也不需要动 `dex_runtime` 或 `dex_hardware_linker` 里的任何东西——
+7. **在部署配置里声明它。** `teleop` 段只能声明**一个**遥操设备。目前内置两种：
+
+   ```jsonc
+   "teleop": {
+     "repository_root": "...", "profile_path": "...",
+     "retargeting_model_directory": "...",
+     "manus":  { "source_id": "...", "topic": "...",
+                 "stale_after_ns": 100000000, "candidate_ttl_ns": 100000000 }
+     // 或者
+     "openxr": { "source_id": "...", "host": "127.0.0.1", "port": 45001,
+                 "stale_after_ns": 100000000, "candidate_ttl_ns": 100000000 }
+   }
+   ```
+
+   同时声明两个、或一个都不声明，都会在打开任何传输之前被拒绝。接入第三种设备
+   意味着这里多一个键，`composition.py::build_hand_only_runtime` 里多一个分支。
+
+除此之外你**不需要**动 `dex_runtime` 或 `dex_hardware_linker` 里的任何东西——
 导入契约禁止你的适配器依赖它们，而且接入新设备本来也不应该需要。

@@ -72,7 +72,7 @@ To look at it instead of measuring it, start the console directly and open
 <http://127.0.0.1:8765/>:
 
 ```bash
-python tools/switch_web_demo.py --transport fake --policy synthetic \
+python tools/run_console.py --transport fake --policy synthetic \
     --vr fake --vr-python .venv/bin/python --arm-telemetry fake --camera fake
 ```
 

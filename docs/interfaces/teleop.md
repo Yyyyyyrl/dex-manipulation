@@ -146,7 +146,25 @@ surprise.
    staleness the way the built-in sources do. Golden-trace comparison is the
    norm here; the frozen traces are in `assets/golden/`.
 
-Two things you do **not** need to do: register the device anywhere (composition
-wires it explicitly), and touch anything under `dex_runtime` or
-`dex_hardware_linker` — the import contracts forbid your adapter from depending
-on them, and nothing about a new device should require it.
+7. **Declare it in the deployment binding.** `teleop` carries exactly one
+   operator device. The two that ship today are:
+
+   ```jsonc
+   "teleop": {
+     "repository_root": "...", "profile_path": "...",
+     "retargeting_model_directory": "...",
+     "manus":  { "source_id": "...", "topic": "...",
+                 "stale_after_ns": 100000000, "candidate_ttl_ns": 100000000 }
+     // or
+     "openxr": { "source_id": "...", "host": "127.0.0.1", "port": 45001,
+                 "stale_after_ns": 100000000, "candidate_ttl_ns": 100000000 }
+   }
+   ```
+
+   Declaring both, or neither, is rejected before any transport opens. Adding a
+   third device means one more key here and one more branch in
+   `composition.py::build_hand_only_runtime`.
+
+You do **not** need to touch anything under `dex_runtime` beyond that branch, or
+anything under `dex_hardware_linker` — the import contracts forbid your adapter
+from depending on them, and nothing about a new device should require it.

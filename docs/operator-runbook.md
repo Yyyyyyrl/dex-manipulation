@@ -76,7 +76,7 @@ Run the import and argument check without opening CAN, UDP listeners, or an HTTP
 server:
 
 ```bash
-.venv/bin/python tools/switch_web_demo.py \
+.venv/bin/python tools/run_console.py \
   --dry-run --transport fake --policy synthetic \
   --vr off --arm-telemetry live --camera off
 ```
@@ -84,7 +84,7 @@ server:
 Rehearse the complete console without hardware:
 
 ```bash
-.venv/bin/python tools/switch_web_demo.py \
+.venv/bin/python tools/run_console.py \
   --transport fake --policy synthetic \
   --vr fake --vr-python .venv/bin/python \
   --arm-telemetry fake --camera fake
@@ -217,7 +217,7 @@ explicitly authorized.
 Start the Linker/OpenXR runtime and its loopback console from this repository:
 
 ```bash
-.venv/bin/python tools/switch_web_demo.py \
+.venv/bin/python tools/run_console.py \
   --transport hand --policy real --deploy /absolute/path/to/deploy.pth \
   --vr real --vr-python /home/user/miniconda3/envs/dexmachina/bin/python \
   --teleop-root /home/user/dex_teleop \
@@ -295,8 +295,11 @@ dex-runtime run /absolute/path/to/deployment.json
 Startup behavior:
 
 1. The validated composition opens one exclusive Linker gateway thread.
-2. Manus and PCsensor sources start on worker threads.
-3. The process waits for a fresh hand state and a valid Manus sample.
+2. The declared operator source and the PCsensor source start on worker threads.
+   The binding selects the operator device: `teleop.manus` subscribes to ROS 2,
+   `teleop.openxr` receives the loopback fanout of the OpenXR bridge. Exactly
+   one may be declared.
+3. The process waits for a fresh hand state and a valid operator sample.
 4. Teleoperation owns the hand; the fake arm owns no physical transport.
 5. Terminal status and JSONL recording begin.
 6. The terminal requests an operator ID and the exact token `CONFIRM`.
@@ -319,7 +322,7 @@ F12 tap behavior:
 - in any other state: record a visible rejection;
 - key repeat events are ignored; a press edge is one request.
 
-During RL execution, Manus continues updating so hand-back has a current live
+During RL execution, the operator source continues updating so hand-back has a current live
 endpoint. After hand-back completes, teleoperation owns the hand and the
 selected policy is automatically reset and re-primed in `RL_SHADOW`.
 
@@ -369,7 +372,7 @@ the live state, and explicitly confirm again.
 
 ## Fault response
 
-- Stale/unhealthy Manus invalidates operator confirmation.
+- A stale or unhealthy operator source invalidates operator confirmation.
 - Stale hand state, missing effective-target evidence, package mismatch,
   gateway/watchdog fault, safety-limit failure, or expired readiness blocks or
   terminates the transition.

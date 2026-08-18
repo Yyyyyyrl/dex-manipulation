@@ -8,7 +8,12 @@ from dex_hardware_linker import (
     LinkerGateway,
     LinkerSdkTransport,
 )
-from dex_teleop_adapters import ManusHandSource, build_dexpilot_retargeter
+from dex_teleop_adapters import (
+    ManusHandSource,
+    UdpOpenXRSource,
+    build_dexpilot_retargeter,
+    build_openxr_dexpilot_retargeter,
+)
 
 from .application import HandOnlyRuntime
 from .operator_switch import EvdevF12SwitchSource
@@ -54,17 +59,41 @@ def build_hand_only_runtime(preflight: PreflightResult) -> HandOnlyRuntime:
         preflight.mapper,
         transport,
     )
-    source = ManusHandSource(
-        source_id=binding.teleop.manus.source_id,
-        hand_side=binding.hand.side,
-        topic=binding.teleop.manus.topic,
-        stale_after_ns=binding.teleop.manus.stale_after_ns,
-    )
-    retargeter = build_dexpilot_retargeter(
-        preflight.teleop_profile,
-        model_directory=binding.teleop.retargeting_model_directory,
-        candidate_ttl_ns=binding.teleop.manus.candidate_ttl_ns,
-    )
+    # The binding guarantees exactly one operator device. Both branches build an
+    # actuator-free source plus its matching DexPilot retargeter; neither opens a
+    # device here -- the Manus source subscribes on start(), and the OpenXR source
+    # only ever reads the loopback fanout of a separate bridge process.
+    manus_binding = binding.teleop.manus
+    openxr_binding = binding.teleop.openxr
+    source: ManusHandSource | UdpOpenXRSource
+    if manus_binding is not None:
+        source = ManusHandSource(
+            source_id=manus_binding.source_id,
+            hand_side=binding.hand.side,
+            topic=manus_binding.topic,
+            stale_after_ns=manus_binding.stale_after_ns,
+        )
+        retargeter = build_dexpilot_retargeter(
+            preflight.teleop_profile,
+            model_directory=binding.teleop.retargeting_model_directory,
+            candidate_ttl_ns=manus_binding.candidate_ttl_ns,
+        )
+    elif openxr_binding is not None:
+        source = UdpOpenXRSource(
+            openxr_binding.host,
+            openxr_binding.port,
+            source_id=openxr_binding.source_id,
+            hand_side=binding.hand.side,
+            stale_after_ns=openxr_binding.stale_after_ns,
+        )
+        retargeter = build_openxr_dexpilot_retargeter(
+            preflight.teleop_profile,
+            model_directory=binding.teleop.retargeting_model_directory,
+            candidate_ttl_ns=openxr_binding.candidate_ttl_ns,
+            source_id=openxr_binding.source_id,
+        )
+    else:  # pragma: no cover - the binding parser rejects this
+        raise ValueError("teleop binding declares no operator device")
     switch = EvdevF12SwitchSource(
         device_path=binding.switch.device_path,
         source_id=binding.switch.source_id,

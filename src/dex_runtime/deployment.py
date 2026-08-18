@@ -38,6 +38,12 @@ def _positive_int(value: object, label: str) -> int:
     return value
 
 
+def _udp_port(value: object, label: str) -> int:
+    if not isinstance(value, int) or isinstance(value, bool) or not 1 <= value <= 65535:
+        raise DeploymentBindingError(f"{label} must be an integer within 1..65535")
+    return value
+
+
 def _positive_float(value: object, label: str) -> float:
     if (
         not isinstance(value, (int, float))
@@ -79,11 +85,30 @@ class ManusBinding:
 
 
 @dataclass(frozen=True)
+class OpenXRBinding:
+    """Loopback UDP bridge carrying Quest/WiVRn ``XR_EXT_hand_tracking`` frames.
+
+    The OpenXR runtime is owned by a separate bridge process; the runtime only
+    ever consumes its loopback fanout, so this binding names a socket, not a
+    device.
+    """
+
+    source_id: str
+    host: str
+    port: int
+    stale_after_ns: int
+    candidate_ttl_ns: int
+
+
+@dataclass(frozen=True)
 class TeleopBinding:
+    """Exactly one of `manus` / `openxr` is set; the parser enforces it."""
+
     repository_root: Path
     profile_path: Path
     retargeting_model_directory: Path
-    manus: ManusBinding
+    manus: ManusBinding | None
+    openxr: OpenXRBinding | None
 
 
 @dataclass(frozen=True)
@@ -253,17 +278,46 @@ class DeploymentBinding:
         )
 
         teleop_raw = _object(raw["teleop"], "teleop")
+        declared = {"manus", "openxr"} & set(teleop_raw)
+        if len(declared) != 1:
+            raise DeploymentBindingError(
+                "teleop must declare exactly one operator device, either manus or "
+                f"openxr; got {sorted(declared)}"
+            )
         _exact(
             teleop_raw,
-            {"repository_root", "profile_path", "retargeting_model_directory", "manus"},
+            {"repository_root", "profile_path", "retargeting_model_directory"} | declared,
             "teleop",
         )
-        manus_raw = _object(teleop_raw["manus"], "teleop.manus")
-        _exact(
-            manus_raw,
-            {"source_id", "topic", "stale_after_ns", "candidate_ttl_ns"},
-            "teleop.manus",
-        )
+        manus: ManusBinding | None = None
+        openxr: OpenXRBinding | None = None
+        if "manus" in declared:
+            manus_raw = _object(teleop_raw["manus"], "teleop.manus")
+            _exact(
+                manus_raw,
+                {"source_id", "topic", "stale_after_ns", "candidate_ttl_ns"},
+                "teleop.manus",
+            )
+            manus = ManusBinding(
+                _text(manus_raw["source_id"], "teleop.manus.source_id"),
+                _text(manus_raw["topic"], "teleop.manus.topic"),
+                _positive_int(manus_raw["stale_after_ns"], "teleop.manus.stale_after_ns"),
+                _positive_int(manus_raw["candidate_ttl_ns"], "teleop.manus.candidate_ttl_ns"),
+            )
+        else:
+            openxr_raw = _object(teleop_raw["openxr"], "teleop.openxr")
+            _exact(
+                openxr_raw,
+                {"source_id", "host", "port", "stale_after_ns", "candidate_ttl_ns"},
+                "teleop.openxr",
+            )
+            openxr = OpenXRBinding(
+                _text(openxr_raw["source_id"], "teleop.openxr.source_id"),
+                _text(openxr_raw["host"], "teleop.openxr.host"),
+                _udp_port(openxr_raw["port"], "teleop.openxr.port"),
+                _positive_int(openxr_raw["stale_after_ns"], "teleop.openxr.stale_after_ns"),
+                _positive_int(openxr_raw["candidate_ttl_ns"], "teleop.openxr.candidate_ttl_ns"),
+            )
         teleop = TeleopBinding(
             _resolve(base, teleop_raw["repository_root"], "teleop.repository_root"),
             _resolve(base, teleop_raw["profile_path"], "teleop.profile_path"),
@@ -272,12 +326,8 @@ class DeploymentBinding:
                 teleop_raw["retargeting_model_directory"],
                 "teleop.retargeting_model_directory",
             ),
-            ManusBinding(
-                _text(manus_raw["source_id"], "teleop.manus.source_id"),
-                _text(manus_raw["topic"], "teleop.manus.topic"),
-                _positive_int(manus_raw["stale_after_ns"], "teleop.manus.stale_after_ns"),
-                _positive_int(manus_raw["candidate_ttl_ns"], "teleop.manus.candidate_ttl_ns"),
-            ),
+            manus,
+            openxr,
         )
 
         gateway_raw = _object(raw["gateway"], "gateway")

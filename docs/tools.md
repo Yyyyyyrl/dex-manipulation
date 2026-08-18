@@ -13,7 +13,7 @@ that device only — it does not substitute a fake control path.
 
 Two, depending on whether you are developing or running a real session.
 
-| | `switch_web_demo.py` | `start_live_ui.sh` |
+| | `run_console.py` | `start_live_ui.sh` |
 |---|---|---|
 | Interface | Browser, HTTP + SSE | Launches the browser console |
 | Status | **Current. Start here.** | **The authorized live path** |
@@ -30,7 +30,7 @@ is the authority, not this file.
 
 ## Entry points
 
-### `switch_web_demo.py`
+### `run_console.py`
 Browser console for teleop/RL hand switching. Runs the hand-only runtime behind
 a stdlib HTTP server with Server-Sent Events, bundled offline fonts, full
 16-joint hand state, OpenXR monitoring, and an optional clearly-labelled
@@ -38,10 +38,10 @@ synthetic arm source.
 
 ```bash
 # no hardware at all -- note that every source must be faked separately
-python tools/switch_web_demo.py --transport fake --policy synthetic \
+python tools/run_console.py --transport fake --policy synthetic \
     --vr fake --vr-python .venv/bin/python --arm-telemetry fake --camera fake
 
-python tools/switch_web_demo.py --transport hand   # real LinkerHand on can0
+python tools/run_console.py --transport hand   # real LinkerHand on can0
 ```
 
 `--transport` selects the hand only. `--policy`, `--vr`, `--camera`, and
@@ -102,7 +102,7 @@ has two consumers.
 | Sender | Receives in | Purpose |
 |---|---|---|
 | `manus_glove_bridge.py` | `control_console/manus_source.py` | Runs in the ROS 2 environment, subscribes to `ManusGlove`, datagrams the 25-node skeleton to loopback |
-| `openxr_hand_bridge.py` | `control_console/openxr_source.py` and `vr_hitbot_controller.py` | Fans the 26-joint Quest hand stream out to both the hand runtime and the arm owner, loopback only |
+| `openxr_hand_bridge.py` | `dex_teleop_adapters.UdpOpenXRSource` and `vr_hitbot_controller.py` | Fans the 26-joint Quest hand stream out to both the hand runtime and the arm owner, loopback only |
 
 ### Setup scripts
 
@@ -121,7 +121,6 @@ The console implementation. A library, plus two runnable utilities.
 | `realsense_worker.py` | Camera subprocess, isolated so a stall cannot block the control loop |
 | `arm_listener.py` | **Read-only** UDP listener for Hitbot cycle telemetry. Opens no robot SDK. |
 | `manus_source.py` | Validating UDP receiver for the Manus bridge |
-| `openxr_source.py` | Validating UDP receiver for the OpenXR bridge |
 | `build_fonts.py` | Builds the digest-verified WOFF2 bundle. The console is offline by design — no CDN. |
 | `soak_verify.py` | **Runnable.** Hardware-free soak |
 | `hil_observe.py` | **Runnable.** Read-only evidence capture from an authorized live console |
@@ -151,7 +150,7 @@ safe to run during a live session to capture evidence.
 used to cover testing a real hand with no VR available, by substituting virtual
 operator input. It was removed as duplicated surface — it independently
 reproduced policy loading, retargeter construction, and operator switch
-handling. `switch_web_demo.py` covers the same ground, but if you need that
+handling. `run_console.py` covers the same ground, but if you need that
 workflow back, the virtual-source approach is worth recovering from git history
 rather than rewriting.
 

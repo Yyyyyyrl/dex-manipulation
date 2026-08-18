@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Browser demo for teleop / RL hand switching on the real LinkerHand G20.
+"""Live control console for teleop / RL hand switching on the LinkerHand G20.
+
+This is the console entry point `start_live_ui.sh` execs for a supervised live
+session, and the process `soak_verify.py` drives for verification. It is not a
+demo despite its history: for anything touching real hardware,
+`docs/operator-runbook.md` is the authority.
 
 Runs the production hand-only runtime (real ``can0`` transport, or a hardware-free
 ``fake`` transport for verification) behind a stdlib HTTP server.  The English-only
@@ -7,8 +12,8 @@ console uses bundled fonts, Server-Sent Events, full 16-joint hand state,
 OpenXR hand monitoring, and an optional clearly labelled synthetic arm source.
 It adds no external runtime dependencies or hardware command endpoints.
 
-    python tools/switch_web_demo.py --transport hand      # real hand on can0
-    python tools/switch_web_demo.py --transport fake       # no hardware
+    python tools/run_console.py --transport hand      # real hand on can0
+    python tools/run_console.py --transport fake       # no hardware
 """
 
 from __future__ import annotations
@@ -43,7 +48,6 @@ try:
         make_console_server,
     )
     from tools.control_console.arm_listener import ArmTelemetryListener
-    from tools.control_console.openxr_source import UdpOpenXRSource
     from tools.switch_demo_backend import (
         FINGER_NAMES,
         FINGER_PLOT_JOINTS,
@@ -58,7 +62,6 @@ except ModuleNotFoundError:
         make_console_server,
     )
     from control_console.arm_listener import ArmTelemetryListener
-    from control_console.openxr_source import UdpOpenXRSource
     from switch_demo_backend import (
         FINGER_NAMES,
         FINGER_PLOT_JOINTS,
@@ -67,7 +70,10 @@ except ModuleNotFoundError:
 
 from dex_runtime.handoff import HandoffState
 from dex_runtime.telemetry import TelemetryHub
-from dex_teleop_adapters import OPENXR_PARENT_IDS
+from dex_teleop_adapters import (
+    OPENXR_PARENT_IDS,
+    UdpOpenXRSource,
+)
 
 _STATE_COLORS = {
     HandoffState.RL_ACTIVE.value: "#c2410c",
