@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""Forward the Manus glove skeleton to the switch web demo over local UDP.
+"""Forward the Manus glove skeleton to the live control console over local UDP.
 
-The web demo runs in the dex-manipulation venv, which cannot import ROS 2
+The console runs in the dex-manipulation venv, which cannot import ROS 2
 (jazzy uses the system Python plus the ``manus_ws`` overlay).  This bridge runs
 in the ROS 2 environment, subscribes to ``/manus_glove_{id}`` (``ManusGlove``),
 and datagrams the latest 3-D node skeleton to ``127.0.0.1:<udp_port>`` as JSON,
-which the demo renders as a live hand skeleton (a port of ``manus_data_viz.py``).
+which the console renders as a live hand skeleton (a port of ``manus_data_viz.py``).
 
 Real glove (run in the ROS 2 env):
     source /opt/ros/jazzy/setup.bash
     source /home/user/dex_teleop/dex_teleop/manus_ws/install/setup.bash
     python tools/manus_glove_bridge.py --glove-id 0
 
-No glove (verify the demo's rendering path):
+No glove (verify the console's rendering path):
     python tools/manus_glove_bridge.py --fake
 
 Payload schema version 1 includes native Manus coordinates, monotonic time,

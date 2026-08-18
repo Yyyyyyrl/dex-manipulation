@@ -114,15 +114,15 @@ to experiment with, build a synthetic one:
 ```bash
 python -c "
 from pathlib import Path
-from tools.demo_policy_factory import write_demo_package
-print(write_demo_package(Path('/tmp/dex-demo')))
+from tools.synthetic_policy import write_synthetic_package
+print(write_synthetic_package(Path('/tmp/dex-demo')))
 "
 dex-runtime verify-package /tmp/dex-demo --allow-unsigned-local
 ```
 
 That prints the validated `PolicyDescriptor`, including the content-addressed
 `package_id`. For the shape of a deployment config, read
-`_base_config()` in [`tools/switch_demo_backend.py`](../tools/switch_demo_backend.py) —
+`_base_config()` in [`tools/console_backend.py`](../tools/console_backend.py) —
 it is the canonical example, kept working because the console depends on it.
 
 `preflight` is always safe to run: it loads and cross-checks the deployment,
@@ -135,7 +135,7 @@ calibration, teleop profile, and policy package, and opens no hardware.
 | I want to… | Start at |
 |---|---|
 | Add a glove / VR device | [`interfaces/teleop.md`](interfaces/teleop.md), then `src/dex_teleop_adapters/protocols.py` |
-| Deploy a policy I trained | [`interfaces/policy.md`](interfaces/policy.md), then `tools/build_demo_policy.py` |
+| Deploy a policy I trained | [`interfaces/policy.md`](interfaces/policy.md), then `tools/repackage_stage2_policy.py` |
 | Change when the policy may take over | `src/dex_runtime/handoff.py` |
 | Change a safety limit | Deployment config `safety` block → `src/dex_runtime/safety.py` |
 | Add a precondition to switching | `src/dex_runtime/readiness.py` (add a provider) |

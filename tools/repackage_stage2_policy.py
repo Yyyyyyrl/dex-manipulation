@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Repackage a dex-forge Stage-2 deploy.pth into a runtime-valid demo policy.
+"""Repackage a dex-forge Stage-2 deploy.pth into a policy this runtime accepts.
 
 The dex-forge exporter (``screwdriver_rl.deploy.policy_package.export_policy_package``)
 maps a training bundle's real actor + proprio-adapter weights into the
 ``dex-policy-package`` layout the dex-manipulation runtime consumes.  Two small
-adjustments make its output loadable by *this* runtime for the switch demo:
+adjustments make its output loadable by *this* runtime:
 
 1. The exporter emits a ``startup_sequence`` manifest field that the current
    runtime's strict schema rejects; we drop it.
 2. The policy declares a LinkerHand L20 identity + its L20 deploy calibration.
    L20 and G20 are hardware-identical and share the exact semantic-16 schema, so
-   we rebind the manifest to the G20 calibration the demo already drives the hand
-   with — teleop and RL then share one semantic->native mapping.
+   we rebind the manifest to the G20 calibration the console already drives the
+   hand with — teleop and RL then share one semantic->native mapping.
 
 After patching we recompute the content-addressed package id/digest so the
 runtime's ``validate_policy_package`` accepts it.  The trained actor/adapter
@@ -36,10 +36,10 @@ DEX_FORGE = Path("/home/user/dex-forge")
 _TOOLS = ROOT / "tools"
 if str(_TOOLS) not in sys.path:
     sys.path.insert(0, str(_TOOLS))
-from demo_policy_factory import CALIBRATION_LOWER, CALIBRATION_UPPER  # noqa: E402
+from synthetic_policy import CALIBRATION_LOWER, CALIBRATION_UPPER  # noqa: E402
 
-# The G20 calibration + semantic schema the demo runtime binds to (mirrors
-# tools/demo_policy_factory.py, the synthetic package builder).
+# The G20 calibration + semantic schema the runtime binds to (mirrors
+# tools/synthetic_policy.py, the synthetic package builder).
 G20_CALIBRATION_ID = "linker-g20-left-lht20-010-415-v1"
 G20_CALIBRATION_DIGEST = "1e20d989a14aa9fe127e78680decb9bb29679858e223c41ad28ae67a598d51df"
 G20_HAND_MODEL = "LinkerHand G20"
@@ -84,13 +84,13 @@ def _content_digest(manifest: dict) -> str:
     return hashlib.sha256(canonical_json(content).encode("utf-8")).hexdigest()
 
 
-def build_g20_demo_package(
+def repackage_g20_policy(
     out_dir: Path,
     *,
     deploy_pth: Path = DEFAULT_DEPLOY,
     metadata_path: Path = DEFAULT_METADATA,
 ) -> tuple[Path, str]:
-    """Export ``deploy_pth`` and rebind it to the demo's G20 identity.
+    """Export ``deploy_pth`` and rebind it to the deployment G20 identity.
 
     Returns ``(package_dir, package_id)``.
     """
@@ -107,20 +107,20 @@ def build_g20_demo_package(
     # The top-down exporter requires a collision-safe ``startup_reset_targets`` in
     # the bundle config, which only feeds the ``startup_sequence`` manifest field
     # we strip below.  This bundle omits it, so synthesize the neutral home
-    # posture purely to satisfy the export gate; the value is inert for the demo.
+    # posture purely to satisfy the export gate; the value is inert here.
     bundle = torch.load(str(deploy_pth), map_location="cpu", weights_only=False)
     if bundle["config"].get("startup_reset_targets") is None:
         bundle["config"]["startup_reset_targets"] = list(bundle["config"]["home_targets"])
 
     metadata = json.loads(metadata_path.read_text())
-    # Rebind identity to the demo's G20 calibration before export so the emitted
+    # Rebind identity to the deployment G20 calibration before export so the emitted
     # manifest is already G20-native; the schema id/digest are unchanged.
     metadata["hand"] = dict(metadata["hand"], model=G20_HAND_MODEL)
     metadata["calibration_compatibility"] = [
         {"calibration_id": G20_CALIBRATION_ID, "artifact_digest": G20_CALIBRATION_DIGEST}
     ]
     metadata["readiness_provider_ids"] = list(DEMO_READINESS_PROVIDERS)
-    metadata["display_name"] = metadata.get("display_name", "policy") + " (G20 switch demo)"
+    metadata["display_name"] = metadata.get("display_name", "policy") + " (G20 rebind)"
 
     out_dir = Path(out_dir)
     out_dir.parent.mkdir(parents=True, exist_ok=True)
@@ -128,7 +128,7 @@ def build_g20_demo_package(
         raw = Path(export_policy_package(bundle, metadata, str(Path(tmp) / "pkg")))
         manifest = json.loads((raw / "manifest.json").read_text())
         # Drop newer exporter fields this runtime's strict schema does not accept.
-        # Both are inert for the demo: the runtime ignores startup_sequence and
+        # Both are inert here: the runtime ignores startup_sequence and
         # derives the initial effective target from live hand state, not manifest.
         manifest.pop("startup_sequence", None)
         manifest.get("action_transform", {}).pop("initial_effective_target_rad", None)
@@ -161,7 +161,7 @@ def main() -> int:
     parser.add_argument("--metadata", type=Path, default=DEFAULT_METADATA)
     parser.add_argument("--output", type=Path, required=True, help="package output directory")
     args = parser.parse_args()
-    pkg, package_id = build_g20_demo_package(
+    pkg, package_id = repackage_g20_policy(
         args.output, deploy_pth=args.deploy, metadata_path=args.metadata
     )
     print(json.dumps({"package": str(pkg), "package_id": package_id}, indent=2))

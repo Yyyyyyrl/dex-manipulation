@@ -175,7 +175,7 @@ tick would change what the policy sees with no signal that it happened.
 1. **Export from training.** You need a `deploy.pth` and the metadata the
    exporter produces.
 
-2. **Repackage.** `tools/build_demo_policy.py::build_g20_demo_package` is the
+2. **Repackage.** `tools/repackage_stage2_policy.py::repackage_g20_policy` is the
    worked example. It calls the `dex-forge` exporter, then does the parts that
    are specific to landing on this runtime: strips fields the runtime rejects,
    rebinds calibration compatibility from the training hand to the deployment

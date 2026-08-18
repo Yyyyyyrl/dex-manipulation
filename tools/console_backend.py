@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-"""Shared backend for the teleop / RL switch demos (hand or fake transport).
+"""Shared backend for the live control console (hand or fake transport).
 
-This module carries the hardware-capable pieces used by the web demo: a bounded
+`run_console.py` is the entry point; this module is what it builds the runtime
+with, on the live path as well as in fake mode.
+
+It carries the hardware-capable pieces the console needs: a bounded
 virtual OpenXR wave source, a visible four-finger retargeter, a synthetic biased
 RL policy, the real Linker SDK transport (plus a raw can0 initial read), and a
 programmatic operator switch.  It imports no GUI toolkit and imports ``can``
@@ -29,14 +32,6 @@ TOOLS = ROOT / "tools"
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
-from demo_policy_factory import (  # noqa: E402
-    CALIBRATION_DIGEST,
-    CALIBRATION_ID,
-    CALIBRATION_LOWER,
-    CALIBRATION_UPPER,
-    rewrite_manifest,
-    write_demo_package,
-)
 from dex_contracts import (  # noqa: E402
     PROTOCOL_VERSION,
     AcknowledgementLevel,
@@ -60,6 +55,14 @@ from dex_runtime.status import RuntimeStatus  # noqa: E402
 from dex_teleop_adapters import (  # noqa: E402
     OpenXRSourceStatus,
     build_openxr_dexpilot_retargeter,
+)
+from synthetic_policy import (  # noqa: E402
+    CALIBRATION_DIGEST,
+    CALIBRATION_ID,
+    CALIBRATION_LOWER,
+    CALIBRATION_UPPER,
+    rewrite_manifest,
+    write_synthetic_package,
 )
 
 CAN_ID = 0x28
@@ -123,7 +126,7 @@ def choose_policy_action(
 
 
 def write_biased_policy(directory: Path, action: tuple[float, ...]) -> Path:
-    package = write_demo_package(directory)
+    package = write_synthetic_package(directory)
     actor_path = package / "actor.safetensors"
     actor_state = load_file(str(actor_path))
     actor_state = {name: torch.zeros_like(value) for name, value in actor_state.items()}
@@ -311,7 +314,7 @@ class VisibleWaveRetargeter:
 class BoundedTeleopRetargeter:
     """Ramp validated OpenXR DexPilot targets from the measured hand posture.
 
-    The standard runtime composition remains unchanged.  The web demo already
+    The standard runtime composition remains unchanged.  The console already
     uses a bounded posture ramp for synthetic teleoperation; this wrapper gives
     real/fake OpenXR input the same first-tick behavior while preserving sample
     and candidate identity for telemetry correlation.
@@ -430,14 +433,14 @@ class QueueStatusRenderer:
 
 
 def _base_config(work: Path, package: Path) -> dict:
-    """The shared deployment config used by every demo backend."""
+    """The shared deployment config every console transport mode starts from."""
 
     package_id = json.loads((package / "manifest.json").read_text())["package_id"]
     return {
         "format_version": 1,
         "binding_id": "linker-g20-left-switch-demo-v1",
         "protocol_version": "1.0",
-        "control_session_id": f"switch-demo-{time.monotonic_ns()}",
+        "control_session_id": f"console-{time.monotonic_ns()}",
         "hand": {
             "model": "LinkerHand G20",
             "side": "left",
@@ -595,7 +598,7 @@ def build_runtime(
         raise ValueError("transport_kind must be 'hand' or 'fake'")
     if policy_kind not in ("synthetic", "real"):
         raise ValueError("policy_kind must be 'synthetic' or 'real'")
-    work = Path(tempfile.mkdtemp(prefix="dex-switch-demo-", dir="/tmp"))
+    work = Path(tempfile.mkdtemp(prefix="dex-console-", dir="/tmp"))
     mapper = LinkerMapper.load()
 
     if transport_kind == "hand":
@@ -609,10 +612,10 @@ def build_runtime(
     current_semantic = mapper.inverse(initial_native)
 
     if policy_kind == "real":
-        from build_demo_policy import build_g20_demo_package
+        from repackage_stage2_policy import repackage_g20_policy
 
         kwargs = {} if deploy_pth is None else {"deploy_pth": Path(deploy_pth)}
-        package, _package_id = build_g20_demo_package(work / "store" / "real-policy", **kwargs)
+        package, _package_id = repackage_g20_policy(work / "store" / "real-policy", **kwargs)
         policy_action = ()
         # The real task policy runs in a tighter posture range than teleop.  Rather
         # than pre-posing the hand, teleop ramps it into the policy's grasp posture

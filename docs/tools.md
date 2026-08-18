@@ -75,21 +75,21 @@ wrist deltas.
 
 Runs under `.venv-hitbot`, a separate interpreter — see the note at the end.
 
-### `demo_policy_factory.py`
+### `synthetic_policy.py`
 Builds a **synthetic** policy package from nothing — no `dex-forge` checkout and
 no trained weights required. This is the fastest way to get a package that
 `verify-package`, `preflight`, and the console will accept. Use
-`build_demo_policy.py` instead when you have a real Stage-2 export.
+`repackage_stage2_policy.py` instead when you have a real Stage-2 export.
 
-### `build_demo_policy.py`
+### `repackage_stage2_policy.py`
 Repackages a `dex-forge` Stage-2 `deploy.pth` into a package this runtime will
 load: strips fields the runtime rejects, rebinds calibration compatibility from
 the training hand to the deployment hand, checks action bounds against the
 safety envelope, and recomputes the content-addressed id. See
 [interfaces/policy.md](interfaces/policy.md).
 
-### `switch_demo_backend.py`
-Shared backend for the web demo: runtime construction, virtual OpenXR source,
+### `console_backend.py`
+Shared backend for the console: runtime construction, virtual OpenXR source,
 visible retargeter, synthetic policy. Imported, not run. `_base_config()` is the
 canonical worked example of a deployment config.
 

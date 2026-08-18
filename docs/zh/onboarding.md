@@ -102,14 +102,14 @@ dex-runtime run CONFIG            # 启动运行时
 ```bash
 python -c "
 from pathlib import Path
-from tools.demo_policy_factory import write_demo_package
-print(write_demo_package(Path('/tmp/dex-demo')))
+from tools.synthetic_policy import write_synthetic_package
+print(write_synthetic_package(Path('/tmp/dex-demo')))
 "
 dex-runtime verify-package /tmp/dex-demo --allow-unsigned-local
 ```
 
 它会打印校验通过的 `PolicyDescriptor`，包含内容寻址的 `package_id`。
-部署配置的结构，读 [`tools/switch_demo_backend.py`](../../tools/switch_demo_backend.py)
+部署配置的结构，读 [`tools/console_backend.py`](../../tools/console_backend.py)
 里的 `_base_config()`——它是权威示例，而且因为控制台依赖它，所以一直是可用的。
 
 `preflight` 任何时候都可以安全执行：它加载并交叉校验部署配置、标定、遥操 profile
@@ -122,7 +122,7 @@ dex-runtime verify-package /tmp/dex-demo --allow-unsigned-local
 | 我想…… | 从这里开始 |
 |---|---|
 | 接入手套 / VR 设备 | [遥操接口](interfaces/teleop.md)，然后看 `src/dex_teleop_adapters/protocols.py` |
-| 部署我训练的策略 | [策略接口](interfaces/policy.md)，然后看 `tools/build_demo_policy.py` |
+| 部署我训练的策略 | [策略接口](interfaces/policy.md)，然后看 `tools/repackage_stage2_policy.py` |
 | 改「策略何时可以接管」 | `src/dex_runtime/handoff.py` |
 | 改某条安全限位 | 部署配置的 `safety` 段 → `src/dex_runtime/safety.py` |
 | 给切换加一个前置条件 | `src/dex_runtime/readiness.py`（新增一个 provider） |

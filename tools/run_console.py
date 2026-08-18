@@ -32,7 +32,7 @@ from pathlib import Path
 
 
 def _die_with_parent() -> None:
-    """preexec_fn: ask the kernel to SIGTERM this child if the demo process dies."""
+    """preexec_fn: ask the kernel to SIGTERM this child if the console process dies."""
     try:
         ctypes.CDLL("libc.so.6", use_errno=True).prctl(1, signal.SIGTERM)  # PR_SET_PDEATHSIG
     except Exception:
@@ -40,6 +40,11 @@ def _die_with_parent() -> None:
 
 
 try:
+    from tools.console_backend import (
+        FINGER_NAMES,
+        FINGER_PLOT_JOINTS,
+        build_runtime,
+    )
     from tools.control_console import (
         ConsoleTelemetryPump,
         RealSenseD435Source,
@@ -48,12 +53,12 @@ try:
         make_console_server,
     )
     from tools.control_console.arm_listener import ArmTelemetryListener
-    from tools.switch_demo_backend import (
+except ModuleNotFoundError:
+    from console_backend import (
         FINGER_NAMES,
         FINGER_PLOT_JOINTS,
         build_runtime,
     )
-except ModuleNotFoundError:
     from control_console import (
         ConsoleTelemetryPump,
         RealSenseD435Source,
@@ -62,11 +67,6 @@ except ModuleNotFoundError:
         make_console_server,
     )
     from control_console.arm_listener import ArmTelemetryListener
-    from switch_demo_backend import (
-        FINGER_NAMES,
-        FINGER_PLOT_JOINTS,
-        build_runtime,
-    )
 
 from dex_runtime.handoff import HandoffState
 from dex_runtime.telemetry import TelemetryHub
@@ -130,7 +130,7 @@ def start_vr_bridge(
         stderr=subprocess.STDOUT,
         preexec_fn=_die_with_parent,
     )
-    print(f"[switch-web-demo] OpenXR bridge: {mode} -> hand udp {hand_port}, arm udp {arm_port}")
+    print(f"[console] OpenXR bridge: {mode} -> hand udp {hand_port}, arm udp {arm_port}")
     return proc
 
 
@@ -179,10 +179,10 @@ class DemoController:
         self._outcome: dict[str, object] = {}
 
         self._runtime_thread = threading.Thread(
-            target=self._run_runtime, name="switch-demo-runtime", daemon=True
+            target=self._run_runtime, name="console-runtime", daemon=True
         )
         self._controller_thread = threading.Thread(
-            target=self._control_loop, name="switch-demo-controller", daemon=True
+            target=self._control_loop, name="console-controller", daemon=True
         )
 
     # -- lifecycle -------------------------------------------------------
@@ -245,7 +245,7 @@ class DemoController:
             with self._lock:
                 self._message = "Teleoperation is moving the hand to the policy grasp posture."
             return
-        self.runtime.confirm_operator("web-demo-operator")
+        self.runtime.confirm_operator("console-operator")
         with self._lock:
             self._confirmed = True
             self._message = (
@@ -1030,12 +1030,12 @@ def main() -> int:
 
     lock = None
     if args.transport == "hand":
-        lock_path = Path("/tmp/dex-switch-web-demo.lock")
+        lock_path = Path("/tmp/dex-run-console.lock")
         lock = lock_path.open("w")
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as exc:
-            raise RuntimeError("another switch web demo is already running") from exc
+            raise RuntimeError("another console is already running") from exc
 
     vr = None
     if vr_mode != "off":
@@ -1145,15 +1145,15 @@ def main() -> int:
             display_hz=20.0,
         )
         telemetry_pump.start()
-        print(f"[switch-web-demo] transport={args.transport}  ->  {url}")
-        print(f"[switch-web-demo] OpenXR control input={vr_mode}")
-        print(f"[switch-web-demo] arm telemetry={args.arm_telemetry}")
-        print(f"[switch-web-demo] camera={args.camera}")
-        print(f"[switch-web-demo] logs: {work}")
-        print("[switch-web-demo] Ctrl-C to stop")
+        print(f"[console] transport={args.transport}  ->  {url}")
+        print(f"[console] OpenXR control input={vr_mode}")
+        print(f"[console] arm telemetry={args.arm_telemetry}")
+        print(f"[console] camera={args.camera}")
+        print(f"[console] logs: {work}")
+        print("[console] Ctrl-C to stop")
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\n[switch-web-demo] stopping...")
+        print("\n[console] stopping...")
     finally:
         if server is not None:
             server.console_stop.set()
@@ -1174,7 +1174,7 @@ def main() -> int:
             try:
                 camera.stop()
             except TimeoutError as exc:
-                print(f"[switch-web-demo] camera shutdown warning: {exc}")
+                print(f"[console] camera shutdown warning: {exc}")
         if server is not None:
             server.server_close()
     exc = controller._outcome.get("exception")

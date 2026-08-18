@@ -159,7 +159,7 @@ LOADED --reset--> SHADOW --activate--> ACTIVE
 
 1. **从训练侧导出。** 你需要一个 `deploy.pth` 以及导出器产生的元数据。
 
-2. **重新打包。** `tools/build_demo_policy.py::build_g20_demo_package` 是完整范例。
+2. **重新打包。** `tools/repackage_stage2_policy.py::repackage_g20_policy` 是完整范例。
    它调用 `dex-forge` 的导出器，然后做那些「落到本运行时」所特有的事：
    剥掉运行时会拒绝的字段，把标定兼容性从训练用手重新绑定到部署用手，
    校验动作边界落在安全包络之内，并重算内容寻址的 id 与摘要。

@@ -1,3 +1,10 @@
+"""Build a synthetic policy package with no trained weights and no dex-forge.
+
+This is what `run_console.py --policy synthetic` loads, including on the
+supervised live path that `start_live_ui.sh` starts. The package is synthetic;
+the runtime that executes it is not.
+"""
+
 from __future__ import annotations
 
 import hashlib
@@ -76,7 +83,7 @@ def rewrite_manifest(directory: Path, manifest: dict) -> None:
     (directory / "manifest.json").write_text(canonical_json(manifest) + "\n", encoding="utf-8")
 
 
-def write_demo_package(root: Path, *, free_object: bool = False) -> Path:
+def write_synthetic_package(root: Path, *, free_object: bool = False) -> Path:
     root.mkdir(parents=True)
     torch.manual_seed(7)
     lower = list(CALIBRATION_LOWER)
