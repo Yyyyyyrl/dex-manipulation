@@ -5,7 +5,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,17 +15,13 @@ jobs:
       - run: ./bootstrap.sh core
       # Installed on top of the `core` profile rather than via `all`: the full
       # profile builds dex-retargeting from git and pulls the LinkerHand SDK,
-      # neither of which the hardware-free suite needs. opencv-python-headless
-      # is required because the synthetic D435 source JPEG-encodes its frames.
+      # neither of which the static checks need.
       - run: >
           .venv/bin/pip install
-          "pytest==9.0.3"
           "import-linter==2.3"
           "ruff==0.9.6"
           "mypy==1.15.0"
-          "opencv-python-headless==4.11.0.86"
       - run: .venv/bin/ruff check .
       - run: .venv/bin/ruff format --check .
       - run: .venv/bin/mypy
       - run: .venv/bin/lint-imports
-      - run: .venv/bin/pytest

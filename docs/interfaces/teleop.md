@@ -141,11 +141,10 @@ surprise.
    `source_coordinate_conversion`, and recompute `profile_digest` over the
    canonical JSON excluding that field.
 
-6. **Test without hardware.** Feed recorded or synthetic samples in and assert
-   on the resulting candidates. `tests/test_manus.py` covers source validation
-   (side, layout, sequence, staleness); `tests/test_openxr_telemetry.py` covers
-   an end-to-end UDP source. Golden-trace comparison is the norm here — see
-   `tests/fixtures/golden/`.
+6. **Check it without hardware.** Feed recorded or synthetic samples in and
+   inspect the resulting candidates — validate side, layout, sequence, and
+   staleness the way the built-in sources do. Golden-trace comparison is the
+   norm here; the frozen traces are in `assets/golden/`.
 
 Two things you do **not** need to do: register the device anywhere (composition
 wires it explicitly), and touch anything under `dex_runtime` or

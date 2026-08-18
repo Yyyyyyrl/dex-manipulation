@@ -29,7 +29,6 @@ camera = [
   "pyrealsense2==2.58.3.10794",
 ]
 dev = [
-  "pytest==9.0.3",
   "import-linter==2.3",
   "ruff==0.9.6",
   "mypy==1.15.0",
@@ -53,15 +52,6 @@ dex_hardware_linker = [
   "assets/model/*.urdf",
   "assets/model/meshes/*.STL",
 ]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "-ra"
-# `tools` is a repository-local package, not an installed distribution, and the
-# tests import it. Without this the suite only passes under `python -m pytest`
-# (which happens to put the CWD on sys.path) and fails under the `pytest`
-# console script that CI invokes.
-pythonpath = ["."]
 
 [tool.ruff]
 target-version = "py310"

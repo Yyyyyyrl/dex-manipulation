@@ -26,8 +26,6 @@ history, and a verified arm hold; every failure falls back to holding still.
 ```bash
 ./bootstrap.sh core          # use Python 3.10-3.12
 source .venv/bin/activate
-python -m pytest             # 119 tests, no hardware
-
 # run the whole stack with no hardware at all
 python -m tools.control_console.soak_verify --duration-s 30 --viewer-count 1
 
@@ -96,7 +94,6 @@ deferred or gated, as recorded in
 ## Development
 
 ```bash
-python -m pytest       # tests
 lint-imports           # layering contracts (enforced in CI)
 ruff check . && ruff format --check .
 mypy

@@ -31,7 +31,6 @@ fi
   "evdev==1.7.1" \
   "opencv-python-headless==4.11.0.86" \
   "pyrealsense2==2.58.3.10794" \
-  "pytest==9.0.3" \
   "import-linter==2.3" \
   "dex-retargeting @ git+https://github.com/dexsuite/dex-retargeting.git@8632b2cab32e1b51ce379940c414a0f78332ff6b"
 

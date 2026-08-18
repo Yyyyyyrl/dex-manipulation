@@ -128,10 +128,9 @@ profile 把「设备 + 手」这一组合中所有不允许漂移的东西钉死
    `source_coordinate_conversion`，并对排除 `profile_digest` 后的规范 JSON
    重新计算摘要。
 
-6. **无硬件测试。** 喂入录制的或合成的样本，对产出的候选值做断言。
-   `tests/test_manus.py` 覆盖数据源校验（左右手、布局、序号、陈旧），
-   `tests/test_openxr_telemetry.py` 覆盖端到端的 UDP 源。这里的惯例是 golden trace
-   对比，见 `tests/fixtures/golden/`。
+6. **无硬件核验。** 喂入录制的或合成的样本，检查产出的候选值——像内置数据源那样
+   校验左右手、布局、序号与陈旧性。这里的惯例是 golden trace 对比，冻结的轨迹在
+   `assets/golden/`。
 
 有两件事你**不需要**做：不需要在任何地方注册设备（composition 里显式接线），
 也不需要动 `dex_runtime` 或 `dex_hardware_linker` 里的任何东西——

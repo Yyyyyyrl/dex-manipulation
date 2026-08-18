@@ -25,7 +25,7 @@ PYTHON=python3.12 ./bootstrap.sh core
 | | `core` | `all` |
 |---|---|---|
 | numpy、PyYAML、safetensors、torch（CPU） | 有 | 有 |
-| pytest、import-linter、ruff、mypy | 无¹ | 有 |
+| import-linter、ruff、mypy | 无¹ | 有 |
 | `python-can`（LinkerHand CAN） | 无 | 有 |
 | `evdev`（F12 脚踏开关） | 无 | 有 |
 | OpenCV + `pyrealsense2`（D435） | 无 | 有 |
@@ -44,15 +44,10 @@ SHA-256。如果驱动内容无法识别，它会拒绝继续，而不是往未�
 ## 2. 确认代码树是健康的
 
 ```bash
-python -m pytest          # 119 passed，约 13 秒，无需硬件
 lint-imports              # 三条分层契约
 ruff check . && ruff format --check .
 mypy
 ```
-
-如果 `pytest` 报 `ModuleNotFoundError: No module named 'tools'`，说明
-`pyproject.toml` 的 `[tool.pytest.ini_options]` 里缺了 `pythonpath = ["."]`。
-测试会导入仓库本地的 `tools` 包，而它并不是一个已安装的发行包。
 
 ## 3. 完全无硬件地跑起来
 
@@ -96,13 +91,13 @@ dex-runtime run CONFIG            # 启动运行时
 ```
 
 仓库没有附带示例部署配置，因为一个有效配置必须引用真实的策略包和真实的手部序列号。
-想要一个可以试验的策略包，可以用测试用的同一个合成工厂：
+想要一个可以试验的策略包，可以自己合成一个：
 
 ```bash
-PYTHONPATH=tests python -c "
+python -c "
 from pathlib import Path
-from policy_package_factory import write_test_package
-print(write_test_package(Path('/tmp/dex-demo')))
+from tools.demo_policy_factory import write_demo_package
+print(write_demo_package(Path('/tmp/dex-demo')))
 "
 dex-runtime verify-package /tmp/dex-demo --allow-unsigned-local
 ```
@@ -135,7 +130,6 @@ dex-runtime verify-package /tmp/dex-demo --allow-unsigned-local
 | 现象 | 原因与解决 |
 |---|---|
 | `No matching distribution found for numpy==1.26.0` | Python 是 3.13。改用 `PYTHON=python3.12 ./bootstrap.sh core`。 |
-| `ModuleNotFoundError: No module named 'tools'` | 跑 `pytest` 时缺 `pythonpath = ["."]`，或者不在仓库根目录下执行。 |
 | CAN 权限被拒 | `can0` 需要处于 up 状态，且当前用户在正确的组里。先用 `ip link show can0` 确认，再怀疑运行时。 |
 | 找不到 D435 | 安装 udev 规则：`sudo tools/install_d435_udev.sh`，然后重新插拔。 |
 | WiVRn / OpenXR 会话起不来 | 头显会话由本仓库之外管理。`tools/start_live_ui.sh --dry-run` 可以只检查前置条件而不启动硬件。 |

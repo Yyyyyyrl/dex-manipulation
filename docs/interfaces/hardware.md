@@ -124,7 +124,7 @@ command a jump to wherever the operator's hand had wandered.
    and any mimic relationships. Compute its digest.
 3. **Author a per-unit calibration** mapping each semantic joint to a slot, with
    bounds, flip, and offset. Calibrate per physical hand, not per model.
-4. **Add golden fixtures.** `tests/fixtures/golden/linker_mapping_golden_v1.json`
+4. **Add golden fixtures.** `assets/golden/linker_mapping_golden_v1.json`
    is the pattern: pin the semantic→native mapping so a future refactor cannot
    silently change where the hand goes.
 5. **Add a teleop profile** for the device/hand pairing

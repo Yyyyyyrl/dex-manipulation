@@ -25,10 +25,18 @@ import torch
 from safetensors.torch import load_file, save_file
 
 ROOT = Path(__file__).resolve().parents[1]
-TESTS = ROOT / "tests"
-if str(TESTS) not in sys.path:
-    sys.path.insert(0, str(TESTS))
+TOOLS = ROOT / "tools"
+if str(TOOLS) not in sys.path:
+    sys.path.insert(0, str(TOOLS))
 
+from demo_policy_factory import (  # noqa: E402
+    CALIBRATION_DIGEST,
+    CALIBRATION_ID,
+    CALIBRATION_LOWER,
+    CALIBRATION_UPPER,
+    rewrite_manifest,
+    write_demo_package,
+)
 from dex_contracts import (  # noqa: E402
     PROTOCOL_VERSION,
     AcknowledgementLevel,
@@ -52,14 +60,6 @@ from dex_runtime.status import RuntimeStatus  # noqa: E402
 from dex_teleop_adapters import (  # noqa: E402
     OpenXRSourceStatus,
     build_openxr_dexpilot_retargeter,
-)
-from policy_package_factory import (  # noqa: E402
-    CALIBRATION_DIGEST,
-    CALIBRATION_ID,
-    CALIBRATION_LOWER,
-    CALIBRATION_UPPER,
-    rewrite_manifest,
-    write_test_package,
 )
 
 CAN_ID = 0x28
@@ -123,7 +123,7 @@ def choose_policy_action(
 
 
 def write_biased_policy(directory: Path, action: tuple[float, ...]) -> Path:
-    package = write_test_package(directory)
+    package = write_demo_package(directory)
     actor_path = package / "actor.safetensors"
     actor_state = load_file(str(actor_path))
     actor_state = {name: torch.zeros_like(value) for name, value in actor_state.items()}
@@ -430,7 +430,7 @@ class QueueStatusRenderer:
 
 
 def _base_config(work: Path, package: Path) -> dict:
-    """The shared deployment config (mirrors tests/_write_config, pytest-free)."""
+    """The shared deployment config used by every demo backend."""
 
     package_id = json.loads((package / "manifest.json").read_text())["package_id"]
     return {

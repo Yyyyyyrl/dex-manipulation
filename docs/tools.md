@@ -5,9 +5,6 @@ as a distribution, and never imported by anything under `src/`. It holds the
 surfaces used to bring hardware up, demonstrate the system, and capture
 evidence.
 
-The tests do import it, which is why `pyproject.toml` sets
-`pythonpath = ["."]` for pytest.
-
 Everything here runs the **production** runtime, handoff, safety, mapping, and
 gateway. Where a device is unavailable, a tool substitutes a bounded fake for
 that device only — it does not substitute a fake control path.
@@ -76,6 +73,12 @@ repeats one fixed ServoJ target, verifies TCP stability, and discards operator
 wrist deltas.
 
 Runs under `.venv-hitbot`, a separate interpreter — see the note at the end.
+
+### `demo_policy_factory.py`
+Builds a **synthetic** policy package from nothing — no `dex-forge` checkout and
+no trained weights required. This is the fastest way to get a package that
+`verify-package`, `preflight`, and the console will accept. Use
+`build_demo_policy.py` instead when you have a real Stage-2 export.
 
 ### `build_demo_policy.py`
 Repackages a `dex-forge` Stage-2 `deploy.pth` into a package this runtime will

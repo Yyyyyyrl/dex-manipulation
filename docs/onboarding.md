@@ -27,7 +27,7 @@ What the two profiles differ on:
 | | `core` | `all` |
 |---|---|---|
 | numpy, PyYAML, safetensors, torch (CPU) | yes | yes |
-| pytest, import-linter, ruff, mypy | no¹ | yes |
+| import-linter, ruff, mypy | no¹ | yes |
 | `python-can` (LinkerHand CAN) | no | yes |
 | `evdev` (F12 foot switch) | no | yes |
 | OpenCV + `pyrealsense2` (D435) | no | yes |
@@ -48,16 +48,10 @@ created, not Python dependencies.
 ## 2. Prove the tree is healthy
 
 ```bash
-python -m pytest          # 119 passed, ~13s, no hardware
 lint-imports              # the three layering contracts
 ruff check . && ruff format --check .
 mypy
 ```
-
-If `pytest` reports `ModuleNotFoundError: No module named 'tools'`, your
-`pyproject.toml` is missing `pythonpath = ["."]` under
-`[tool.pytest.ini_options]`. The tests import the repository-local `tools`
-package, which is not an installed distribution.
 
 ## 3. Run it, with no hardware at all
 
@@ -108,13 +102,13 @@ dex-runtime run CONFIG            # start the runtime
 
 The repository ships no example deployment config, because a valid one must
 reference a real policy package and a real hand serial number. To get a package
-to experiment with, use the same synthetic factory the tests use:
+to experiment with, build a synthetic one:
 
 ```bash
-PYTHONPATH=tests python -c "
+python -c "
 from pathlib import Path
-from policy_package_factory import write_test_package
-print(write_test_package(Path('/tmp/dex-demo')))
+from tools.demo_policy_factory import write_demo_package
+print(write_demo_package(Path('/tmp/dex-demo')))
 "
 dex-runtime verify-package /tmp/dex-demo --allow-unsigned-local
 ```
@@ -148,7 +142,6 @@ calibration, teleop profile, and policy package, and opens no hardware.
 | Symptom | Cause and fix |
 |---|---|
 | `No matching distribution found for numpy==1.26.0` | Python 3.13. Use `PYTHON=python3.12 ./bootstrap.sh core`. |
-| `ModuleNotFoundError: No module named 'tools'` | Running `pytest` without `pythonpath = ["."]`, or from outside the repo root. |
 | CAN permission denied | `can0` needs to be up and the user in the right group. Confirm with `ip link show can0` before blaming the runtime. |
 | D435 not found | Install the udev rule: `sudo tools/install_d435_udev.sh`, then replug. |
 | WiVRn / OpenXR session won't start | The headset session is managed outside this repo. `tools/start_live_ui.sh --dry-run` checks the preconditions without starting hardware. |

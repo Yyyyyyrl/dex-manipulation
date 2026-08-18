@@ -31,7 +31,6 @@ From `/home/user/dex-manipulation`:
 ```bash
 ./bootstrap.sh
 source .venv/bin/activate
-pytest
 ```
 
 Inspect a package. Unsigned local trust must be explicit:

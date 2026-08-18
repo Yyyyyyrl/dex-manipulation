@@ -33,13 +33,13 @@ from dex_contracts import canonical_json
 ROOT = Path(__file__).resolve().parents[1]
 DEX_FORGE = Path("/home/user/dex-forge")
 
-_TESTS = ROOT / "tests"
-if str(_TESTS) not in sys.path:
-    sys.path.insert(0, str(_TESTS))
-from policy_package_factory import CALIBRATION_LOWER, CALIBRATION_UPPER  # noqa: E402
+_TOOLS = ROOT / "tools"
+if str(_TOOLS) not in sys.path:
+    sys.path.insert(0, str(_TOOLS))
+from demo_policy_factory import CALIBRATION_LOWER, CALIBRATION_UPPER  # noqa: E402
 
 # The G20 calibration + semantic schema the demo runtime binds to (mirrors
-# tests/policy_package_factory.py, which the whole runtime test-suite uses).
+# tools/demo_policy_factory.py, the synthetic package builder).
 G20_CALIBRATION_ID = "linker-g20-left-lht20-010-415-v1"
 G20_CALIBRATION_DIGEST = "1e20d989a14aa9fe127e78680decb9bb29679858e223c41ad28ae67a598d51df"
 G20_HAND_MODEL = "LinkerHand G20"

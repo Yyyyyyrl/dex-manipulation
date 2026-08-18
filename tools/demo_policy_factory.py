@@ -76,7 +76,7 @@ def rewrite_manifest(directory: Path, manifest: dict) -> None:
     (directory / "manifest.json").write_text(canonical_json(manifest) + "\n", encoding="utf-8")
 
 
-def write_test_package(root: Path, *, free_object: bool = False) -> Path:
+def write_demo_package(root: Path, *, free_object: bool = False) -> Path:
     root.mkdir(parents=True)
     torch.manual_seed(7)
     lower = list(CALIBRATION_LOWER)

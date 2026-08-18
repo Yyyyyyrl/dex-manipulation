@@ -22,8 +22,6 @@
 ```bash
 ./bootstrap.sh core          # 需要 Python 3.10-3.12
 source .venv/bin/activate
-python -m pytest             # 119 个测试，无需硬件
-
 # 完全无硬件跑通整套系统
 python -m tools.control_console.soak_verify --duration-s 30 --viewer-count 1
 
@@ -88,7 +86,6 @@ dex-runtime verify-package PACKAGE [--allow-unsigned-local]
 ## 开发
 
 ```bash
-python -m pytest       # 测试
 lint-imports           # 分层契约（CI 强制）
 ruff check . && ruff format --check .
 mypy
