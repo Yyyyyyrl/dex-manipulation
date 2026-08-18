@@ -20,7 +20,7 @@
 ## 快速开始
 
 ```bash
-./bootstrap.sh core          # 需要 Python 3.10-3.12
+./bootstrap.sh               # `all` 档；需要 Python 3.10-3.12
 source .venv/bin/activate
 # 完全无硬件跑通整套系统
 python -m tools.control_console.soak_verify --duration-s 30 --viewer-count 1

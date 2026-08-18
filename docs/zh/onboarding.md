@@ -70,13 +70,19 @@ python tools/switch_web_demo.py --transport fake --policy synthetic \
 
 **每一路数据源都要单独指定为 fake。** `--transport` 只选择手；
 `--policy`、`--vr`、`--camera`、`--arm-telemetry` 各自都默认为 `real`。
-只传 `--transport fake` 会在尝试从 `dex-forge` 构建真实策略时失败：
+只传 `--transport fake` 会在尝试从一个并不存在的 `dex-forge` 检出里构建真实策略时失败：
 
 ```
-PolicyPackageExportError: bundle config is missing ['observation_semantics_version']
+FileNotFoundError: deploy bundle not found: /home/user/dex-forge/runs/.../deploy.pth
 ```
 
-看到这个报错说明少传了上面某个参数，而不是配置有问题。
+这是宿主机上没有 `dex-forge` 检出时的报错。如果有检出，它会走得更远，改为报
+`PolicyPackageExportError`。两种情况都说明少传了 `--policy synthetic`，
+而不是配置有问题；其余三个参数同理。
+
+本节需要 `all` 档。在 `core` 档下控制台会更早停在
+`ModuleNotFoundError: No module named 'dex_retargeting'`，因为重定向求解器与
+OpenCV 只有 `all` 会装。
 
 ## 4. 命令行
 

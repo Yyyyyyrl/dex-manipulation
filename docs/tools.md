@@ -46,10 +46,11 @@ python tools/switch_web_demo.py --transport hand   # real LinkerHand on can0
 
 `--transport` selects the hand only. `--policy`, `--vr`, `--camera`, and
 `--arm-telemetry` each default to `real`, so `--transport fake` on its own tries
-to build a real policy from `dex-forge` and exits with
-`PolicyPackageExportError`. The module docstring's two-line summary is
-misleading on this point; `build_fake_command()` in `soak_verify.py` is the
-authoritative fake invocation.
+to build a real policy from `dex-forge` and exits — with `FileNotFoundError` if
+there is no `dex-forge` checkout on the host, or `PolicyPackageExportError` if
+there is one but the bundle cannot be exported. The module docstring's two-line
+summary is misleading on this point; `build_fake_command()` in `soak_verify.py`
+is the authoritative fake invocation.
 
 ### `start_live_ui.sh`
 The supervised live launcher, and the only sanctioned way to start the full

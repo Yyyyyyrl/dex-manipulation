@@ -79,13 +79,20 @@ python tools/switch_web_demo.py --transport fake --policy synthetic \
 **Every source has to be faked separately.** `--transport` selects only the
 hand; `--policy`, `--vr`, `--camera`, and `--arm-telemetry` each default to
 `real`. Passing `--transport fake` alone fails while trying to build a real
-policy from `dex-forge`:
+policy out of a `dex-forge` checkout that is not there:
 
 ```
-PolicyPackageExportError: bundle config is missing ['observation_semantics_version']
+FileNotFoundError: deploy bundle not found: /home/user/dex-forge/runs/.../deploy.pth
 ```
 
-If you see that, you are missing one of the other flags, not misconfigured.
+That is the message when there is no `dex-forge` checkout on the host. With one
+present it gets further and fails as `PolicyPackageExportError` instead. Either
+way you are missing `--policy synthetic`, not misconfigured; the same applies to
+the other three flags in turn.
+
+This section needs the `all` profile. Under `core` the console stops earlier,
+at `ModuleNotFoundError: No module named 'dex_retargeting'`, because the
+retargeting solver and OpenCV are installed only by `all`.
 
 ## 4. The CLI
 

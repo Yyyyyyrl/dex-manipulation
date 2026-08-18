@@ -24,7 +24,7 @@ history, and a verified arm hold; every failure falls back to holding still.
 ## Quickstart
 
 ```bash
-./bootstrap.sh core          # use Python 3.10-3.12
+./bootstrap.sh               # the `all` profile; use Python 3.10-3.12
 source .venv/bin/activate
 # run the whole stack with no hardware at all
 python -m tools.control_console.soak_verify --duration-s 30 --viewer-count 1
@@ -36,6 +36,10 @@ python tools/switch_web_demo.py --transport fake --policy synthetic \
 
 `--transport` only selects the *hand*. The policy, operator input, camera, and
 arm telemetry each default to real and must be faked separately, as above.
+
+Use the `all` profile for this. `./bootstrap.sh core` installs the runtime and
+its four core dependencies only — enough for the static checks, but the console
+needs the retargeting solver and OpenCV, which only `all` installs.
 
 Full walkthrough in [docs/onboarding.md](docs/onboarding.md).
 
